@@ -30,6 +30,7 @@ class ProfileFragment : Fragment() {
             activeDevices = 2,
             biometricEngineStatus = "ONLINE",
             lastSync = "3h ago",
+            securityLevel = "HIGH",
         )
 
         // Find the username TextView and set its text
