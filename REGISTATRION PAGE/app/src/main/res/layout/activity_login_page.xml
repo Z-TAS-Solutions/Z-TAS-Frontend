@@ -4,126 +4,93 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/z_background">
+    android:background="#070B14"> <ScrollView
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    android:fillViewport="true"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent">
 
-    <ScrollView
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:fillViewport="true"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="30dp">
+
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginTop="20dp"
+            android:src="@drawable/logo_ztas" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Z-TAS"
+            android:textColor="#FFFFFF"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1"/>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
+            android:layout_marginTop="25dp"
+            android:background="@drawable/register_card_bg"
             android:orientation="vertical"
-            android:padding="30dp">
-
-            <ImageView
-                android:id="@+id/logo"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_marginTop="20dp"
-                android:src="@drawable/logo_ztas" />
+            android:padding="20dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Z-TAS"
+                android:text="LOG IN"
                 android:textColor="#FFFFFF"
-                android:textSize="28sp"
-                android:textStyle="bold" />
+                android:textSize="22sp"
+                android:layout_gravity="center"
+                android:layout_marginBottom="25dp" />
 
-            <LinearLayout
+            <EditText
+                android:id="@+id/etLoginEmail"
+                style="@style/CyberInputStyle"
+                android:hint="E-mail"
+                 />
+
+            <EditText
+                android:id="@+id/etLoginPass"
+                style="@style/CyberInputStyle"
+                android:hint="Password"
+                android:inputType="textPassword"
+                />
+
+            <Button
+                android:id="@+id/btnLogin"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="25dp"
-                android:background="@drawable/register_card_bg"
-                android:orientation="vertical"
-                android:padding="20dp">
+                android:layout_height="55dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/neon_button_bg"
+                android:text="LOG IN"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                app:backgroundTint="@null" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="LOG IN"
-                    android:textColor="#FFFFFF"
-                    android:textSize="22sp"
-                    android:layout_gravity="center"
-                    android:layout_marginBottom="25dp" />
 
-                <EditText
-                    android:id="@+id/etLoginEmail"
-                    style="@style/CyberInputStyle"
-                    android:hint="E-mail"
-                     />
 
-                <EditText
-                    android:id="@+id/etLoginPass"
-                    style="@style/CyberInputStyle"
-                    android:hint="Password"
-                    android:inputType="textPassword"
-                     />
 
-                <Button
-                    android:id="@+id/btnLogin"
-                    android:layout_width="match_parent"
-                    android:layout_height="55dp"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/neon_button_bg"
-                    android:text="LOG IN "
-                    android:textColor="#FFFFFF"
-                    app:backgroundTint="@null" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginVertical="15dp">
-                    <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="#40FFFFFF"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=" OR " android:textColor="#80FFFFFF" android:paddingHorizontal="10dp"/>
-                    <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="#40FFFFFF"/>
-                </LinearLayout>
-
-                <androidx.cardview.widget.CardView
-                    android:id="@+id/btnGoogle"
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    app:cardCornerRadius="28dp"
-                    app:cardBackgroundColor="#FFFFFF"
-                    android:clickable="true"
-                    android:foreground="?attr/selectableItemBackground">
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:layout_gravity="center"
-                        android:gravity="center">
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_google_logo" /> <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Continue with Google"
-                        android:textColor="#000000"
-                        android:textStyle="bold"
-                        android:layout_marginStart="12dp"/>
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/tvToRegister"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="25dp"
-                android:text="New user? Create an account"
-                android:textColor="#80FFFFFF" />
 
         </LinearLayout>
-    </ScrollView>
+
+        <TextView
+            android:id="@+id/tvToRegister"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="25dp"
+            android:text="New user? Create an account"
+            android:textColor="#80FFFFFF" />
+
+    </LinearLayout>
+</ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -4,51 +4,105 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/z_background">
+    android:background="#070B14">
+
+    <ImageButton
+        android:id="@+id/btnBack"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_menu_revert"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="#FFFFFF" />
 
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="30dp"
-        android:gravity="center_horizontal"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/btnBack">
 
         <TextView
-            android:text="OTP Verification"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Enter your phone number"
             android:textColor="#FFFFFF"
-            android:textSize="26sp"
-            android:textStyle="bold"/>
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
         <TextView
-            android:text="Enter Email OR Phone Number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="We'll send you a text verification code."
             android:textColor="#80FFFFFF"
-            android:layout_marginTop="6dp"/>
+            android:textSize="14sp" />
 
-        <EditText
-            android:id="@+id/etOtpEmail"
-            style="@style/CyberInputStyle"
-            android:hint="Email"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="MOBILE NUMBER"
+            android:textColor="#00C4FF"
+            android:textSize="12sp"
+            android:letterSpacing="0.15"
+            android:textStyle="bold" />
 
-        <EditText
-            android:id="@+id/etOtpPhone"
-            style="@style/CyberInputStyle"
-            android:hint="Phone Number"
-            android:inputType="phone"/>
-
-        <Button
-            android:id="@+id/btnSendOtp"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="55dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/cyber_input_bg"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+94"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:layout_marginHorizontal="12dp"
+                android:background="#40FFFFFF" />
+
+            <EditText
+                android:id="@+id/etOtpPhone"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:hint="ENTER YOUR NUMBER"
+                android:inputType="phone"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#40FFFFFF"
+                android:textSize="14sp"
+                android:textAllCaps="true"
+                android:letterSpacing="0.1" />
+        </LinearLayout>
+
+        <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Remember me"
+            android:textColor="#80FFFFFF"
+            android:buttonTint="#00C4FF" />
+
+        <Button
+            android:id="@+id/btnContinue"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:layout_marginTop="32dp"
             android:background="@drawable/neon_button_bg"
-            android:text="SEND OTP"
+            android:text="CONTINUE "
             android:textColor="#FFFFFF"
-            app:backgroundTint="@null"/>
+            android:textStyle="bold"
+            app:backgroundTint="@null" />
 
     </LinearLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

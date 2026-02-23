@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ZTAS">
         <activity
+            android:name=".VerifyCodeActivity"
+            android:exported="false" />
+        <activity
             android:name=".OtpInputPage"
             android:exported="false" />
         <activity
