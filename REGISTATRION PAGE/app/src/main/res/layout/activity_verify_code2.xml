@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#070B14">
+
+    <ImageButton
+        android:id="@+id/btnBackVerify"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_arrow_back"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="#FFFFFF" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="30dp"
+        android:gravity="center_horizontal"
+        app:layout_constraintTop_toBottomOf="@id/btnBackVerify">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Verify Code"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:layout_marginTop="20dp"
+            android:background="#10FFFFFF" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30dp"
+            android:text="Enter code"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Please type the verification code\nsent to +91 ********** "
+            android:textColor="#80FFFFFF"
+            android:gravity="center"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:orientation="horizontal">
+            <EditText android:id="@+id/otp1" style="@style/CyberOtpDigitStyle" />
+            <EditText android:id="@+id/otp2" style="@style/CyberOtpDigitStyle" />
+            <EditText android:id="@+id/otp3" style="@style/CyberOtpDigitStyle" />
+            <EditText android:id="@+id/otp4" style="@style/CyberOtpDigitStyle" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnVerifyCode"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="40dp"
+            android:background="@drawable/neon_button_bg"
+            android:text="CONTINUE →"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            app:backgroundTint="@null" />
+
+        <TextView
+            android:id="@+id/tvResendCode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="25dp"
+            android:text="If you didn't receive a code! Resend"
+            android:textColor="#00C4FF"
+            android:textStyle="bold"
+            android:textSize="13sp" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
