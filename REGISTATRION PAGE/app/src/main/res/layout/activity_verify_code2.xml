@@ -62,10 +62,20 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="40dp"
             android:orientation="horizontal">
-            <EditText android:id="@+id/otp1" style="@style/CyberOtpDigitStyle" />
-            <EditText android:id="@+id/otp2" style="@style/CyberOtpDigitStyle" />
-            <EditText android:id="@+id/otp3" style="@style/CyberOtpDigitStyle" />
-            <EditText android:id="@+id/otp4" style="@style/CyberOtpDigitStyle" />
+            <EditText android:id="@+id/otp1"
+                style="@style/CyberOtpDigitStyle"
+                android:layout_width="70dp"/>
+            <EditText android:id="@+id/otp2"
+                style="@style/CyberOtpDigitStyle"
+                android:layout_width="70dp"/>
+            <EditText android:id="@+id/otp3"
+                style="@style/CyberOtpDigitStyle"
+                android:layout_width="70dp"/>
+
+            <EditText
+                android:id="@+id/otp4"
+                style="@style/CyberOtpDigitStyle"
+                android:layout_width="70dp" />
         </LinearLayout>
 
         <Button
@@ -74,7 +84,7 @@
             android:layout_height="56dp"
             android:layout_marginTop="40dp"
             android:background="@drawable/neon_button_bg"
-            android:text="CONTINUE →"
+            android:text="CONTINUE "
             android:textColor="#FFFFFF"
             android:textStyle="bold"
             app:backgroundTint="@null" />
