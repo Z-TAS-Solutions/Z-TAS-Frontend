@@ -54,12 +54,34 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Please type the verification code sent to \n+94 *******23"
-
+            android:text="Please type the verification code sent to"
             android:textColor="#80FFFFFF"
-            android:gravity="center"
             android:textSize="13sp" />
 
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+94 *******23"
+                android:textColor="#80FFFFFF"
+                android:textSize="13sp" />
+
+            <ImageButton
+                android:id="@+id/btnEditNumber"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="2dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="4dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/edit_pen"
+                app:tint="#00C4FF" />
+        </LinearLayout>
 
         <!-- OTP BOXES -->
         <LinearLayout
@@ -136,13 +158,14 @@
             android:text="Didn't receive a code?"
             android:textColor="#40FFFFFF"
             android:textSize="13sp"
+            android:layout_marginTop="10dp"
             android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
             android:gravity="center_vertical">
 
             <TextView
