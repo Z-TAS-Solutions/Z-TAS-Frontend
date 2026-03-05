@@ -15,7 +15,7 @@ class OtpInputPage : AppCompatActivity() {
 
         val btnContinue = findViewById<Button>(R.id.btnContinue)
         val etOtpPhone = findViewById<EditText>(R.id.etOtpPhone)
-        val btnBack = findViewById<ImageButton>(R.id.btnBack)
+        val btnBack = findViewById<ImageButton>(R.id.btnBackVerify)
 
         btnBack.setOnClickListener {
             onBackPressedDispatcher.onBackPressed() // Professional way to go back
