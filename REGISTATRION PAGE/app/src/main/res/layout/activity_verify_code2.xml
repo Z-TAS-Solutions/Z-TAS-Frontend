@@ -4,9 +4,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#070B14">
+    android:background="@color/deep_navy">
 
-    <!-- Back Button -->
     <ImageButton
         android:id="@+id/btnBackVerify"
         android:layout_width="56dp"
@@ -18,9 +17,9 @@
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/arrow_back"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/ztas_cyan" />
 
-    <!-- Main Content -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -31,22 +30,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Title -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Verify Code"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:textSize="26sp"
             android:textStyle="bold" />
 
-        <!-- Subtitle -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="30dp"
             android:text="Enter code"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -55,7 +52,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="Please type the verification code sent to"
-            android:textColor="#80FFFFFF"
+            android:textColor="@color/text_secondary"
             android:textSize="13sp" />
 
         <LinearLayout
@@ -68,7 +65,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="+94 *******23"
-                android:textColor="#80FFFFFF"
+                android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 
             <ImageButton
@@ -80,10 +77,9 @@
                 android:padding="4dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/edit_pen"
-                app:tint="#00C4FF" />
+                app:tint="@color/ztas_cyan" />
         </LinearLayout>
 
-        <!-- OTP BOXES -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -97,7 +93,7 @@
                 android:layout_marginEnd="12dp"
                 android:background="@drawable/otp_box_bg"
                 android:gravity="center"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/text_primary"
                 android:textSize="22sp"
                 android:inputType="number"
                 android:maxLength="1" />
@@ -109,7 +105,7 @@
                 android:layout_marginEnd="12dp"
                 android:background="@drawable/otp_box_bg"
                 android:gravity="center"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/text_primary"
                 android:textSize="22sp"
                 android:inputType="number"
                 android:maxLength="1" />
@@ -121,7 +117,7 @@
                 android:layout_marginEnd="12dp"
                 android:background="@drawable/otp_box_bg"
                 android:gravity="center"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/text_primary"
                 android:textSize="22sp"
                 android:inputType="number"
                 android:maxLength="1" />
@@ -132,13 +128,12 @@
                 android:layout_height="65dp"
                 android:background="@drawable/otp_box_bg"
                 android:gravity="center"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/text_primary"
                 android:textSize="22sp"
                 android:inputType="number"
                 android:maxLength="1" />
         </LinearLayout>
 
-        <!-- Continue Button -->
         <Button
             android:id="@+id/btnVerifyCode"
             android:layout_width="match_parent"
@@ -146,17 +141,15 @@
             android:layout_marginTop="40dp"
             android:background="@drawable/neon_button_bg"
             android:text="CONTINUE"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:textStyle="bold"
             app:backgroundTint="@null" />
-
-        <!-- Resend -->
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Didn't receive a code?"
-            android:textColor="#40FFFFFF"
+            android:textColor="@color/text_secondary"
             android:textSize="13sp"
             android:layout_marginTop="10dp"
             android:textStyle="bold" />
@@ -173,7 +166,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Resend"
-                android:textColor="#40FFFFFF"
+                android:textColor="@color/text_secondary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
@@ -183,10 +176,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="00:30"
-                android:textColor="#00C4FF"
+                android:textColor="@color/ztas_cyan"
                 android:textSize="13sp"
                 android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -115,7 +115,7 @@
             android:id="@+id/tvLoginLink"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="25dp"
+            android:layout_marginTop="26dp"
             android:text="Already have an account? Log in"
             android:textColor="#80FFFFFF" />
     </LinearLayout>
