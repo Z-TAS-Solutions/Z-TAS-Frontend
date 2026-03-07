@@ -4,9 +4,7 @@ plugins {
 
 android {
     namespace = "com.example.splashscreen"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.splashscreen"
@@ -43,4 +41,5 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation("com.facebook.shimmer:shimmer:0.5.0")
 }
