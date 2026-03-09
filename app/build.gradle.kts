@@ -3,6 +3,7 @@ plugins {
 }
 
 android {
+<<<<<<< HEAD
     namespace = "com.example.z_tas"
     compileSdk {
         version = release(36) {
@@ -13,6 +14,14 @@ android {
     defaultConfig {
         applicationId = "com.example.z_tas"
         minSdk = 24
+=======
+    namespace = "com.example.splashscreen"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "com.example.splashscreen"
+        minSdk = 21
+>>>>>>> origin/main
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -36,6 +45,10 @@ android {
 }
 
 dependencies {
+<<<<<<< HEAD
+=======
+    implementation("androidx.core:core-splashscreen:1.0.1")
+>>>>>>> origin/main
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -44,4 +57,8 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+<<<<<<< HEAD
+=======
+    implementation("com.facebook.shimmer:shimmer:0.5.0")
+>>>>>>> origin/main
 }

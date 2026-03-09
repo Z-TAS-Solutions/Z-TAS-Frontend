@@ -11,9 +11,12 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+<<<<<<< HEAD
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
+=======
+>>>>>>> origin/main
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -22,6 +25,11 @@ dependencyResolutionManagement {
     }
 }
 
+<<<<<<< HEAD
 rootProject.name = "Z-TAS"
 include(":app")
  
+=======
+rootProject.name = "splashScreen"
+include(":app")
+>>>>>>> origin/main
