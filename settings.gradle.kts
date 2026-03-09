@@ -19,5 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ztas-frontend-rafa"
+rootProject.name = "Z-TAS-FrontEnd"
 include(":app")
+ 

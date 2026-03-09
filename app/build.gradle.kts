@@ -3,13 +3,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.ztas_frontend_rafa"
+    namespace = "com.example.z_tas_frontend"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.example.ztas_frontend_rafa"
+        applicationId = "com.example.z_tas_frontend"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
