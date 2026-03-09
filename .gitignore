@@ -24,3 +24,4 @@ local.properties
 *.log
 *.apk
 *.ap_
+.vscode/
