@@ -2,29 +2,59 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#0a0e27">
-    
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="20dp">
 
-        <!--starting w profile header-->
+        <!-- TOP HEADER WITH ICON AND TITLE -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp"
+            android:paddingTop="16dp">
 
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Z-TAS SECURITY"
+                android:textSize="14sp"
+                android:textColor="#00ccff"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:letterSpacing="0.1" />
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/lock_icon"
+                android:contentDescription="Security Icon"
+                app:tint="#00ccff" />
+
+        </LinearLayout>
+
+        <!-- CENTERED USER PROFILE INFO -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
-            android:paddingTop="30dp"
-            android:paddingBottom="20dp">
+            android:layout_marginBottom="48dp">
 
+            <!-- Profile Picture -->
             <FrameLayout
-                android:layout_width="100dp"
-                android:layout_height="100dp"
+                android:layout_width="90dp"
+                android:layout_height="90dp"
                 android:background="@drawable/circular_shapepfp"
-                android:padding="2dp">
+                android:padding="2dp"
+                android:layout_marginBottom="16dp">
 
                 <ImageView
                     android:id="@+id/profilePic"
@@ -37,47 +67,81 @@
                     android:src="@drawable/profile_picture2" />
             </FrameLayout>
 
+            <!-- User Name -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/username"
                 android:text="Adam James"
                 android:textColor="#ffffff"
-                android:textSize="18sp"
-                android:paddingTop="10dp"/>
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center" />
 
+            <!-- User Email -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/useremail"
                 android:text="adam201@gmail.com"
-                android:textSize="17sp"
-                android:textColor="#888889"
-                android:layout_marginTop="6dp"/>
+                android:textSize="13sp"
+                android:textColor="#888888"
+                android:layout_marginTop="8dp"
+                android:fontFamily="sans-serif"
+                android:gravity="center" />
 
-            <TextView
+            <!-- Status Badge -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/status"
-                android:text="STATUS: ACTIVE"
-                android:textSize="15sp"
-                android:layout_marginTop="10dp"
-                android:textColor="#ffffff"/>
-            <!--change font and make status blue and active word, white-->
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/card_bg"
+                android:padding="8dp">
 
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="#00ff00"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:id="@+id/status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ACCOUNT ACTIVE"
+                    android:textSize="11sp"
+                    android:textColor="#00ff00"
+                    android:fontFamily="monospace"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
-        <!--section head: account info-->
+        <!-- DIVIDER LINE -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#1a3a3a"
+            android:layout_marginBottom="32dp" />
+
+
+        <!-- ACCOUNT SETTINGS SECTION -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/accountInfo"
-            android:text="   ACCOUNT INFO"
+            android:text="ACCOUNT SETTINGS"
             android:fontFamily="monospace"
-            android:textSize="16sp"/>
+            android:textSize="11sp"
+            android:textColor="#00ccff"
+            android:textStyle="bold"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="16dp" />
 
-        <!-- Change Password -->
+        <!-- Change Password Card -->
         <LinearLayout
             android:id="@+id/changePasswordCard"
             android:layout_width="match_parent"
@@ -89,10 +153,11 @@
             android:gravity="center_vertical">
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:src="@drawable/lock_icon"
-                android:contentDescription="Lock Icon" />
+                android:contentDescription="Lock Icon"
+                android:tint="#00ccff" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -105,30 +170,32 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Change Password"
-                    android:fontFamily="monospace"
-                    android:textSize="16sp"
-                    android:textColor="#ffffff" />
+                    android:textSize="15sp"
+                    android:textColor="#ffffff"
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold" />
 
                 <TextView
-                    android:id="@+id/lastPasswordChange"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Last changed 25 days ago"
-                    android:textSize="12sp"
+                    android:text="Update your security"
+                    android:textSize="11sp"
                     android:textColor="#888888"
-                    android:layout_marginTop="4dp" />
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="sans-serif" />
 
             </LinearLayout>
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
                 android:src="@drawable/right_arrow"
-                android:contentDescription="Arrow Right" />
+                android:contentDescription="Arrow Right"
+                android:tint="#00ccff" />
 
         </LinearLayout>
 
-        <!-- Active Sessions -->
+        <!-- Active Sessions Card -->
         <LinearLayout
             android:id="@+id/activeSessionsCard"
             android:layout_width="match_parent"
@@ -140,10 +207,11 @@
             android:gravity="center_vertical">
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:src="@drawable/devices_icon"
-                android:contentDescription="Devices Icon" />
+                android:contentDescription="Devices Icon"
+                android:tint="#00ccff" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -156,30 +224,33 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Active Sessions"
-                    android:fontFamily="monospace"
-                    android:textSize="16sp"
-                    android:textColor="#ffffff" />
+                    android:textSize="15sp"
+                    android:textColor="#ffffff"
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/activeDevicesCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="2 devices connected"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:textColor="#888888"
-                    android:layout_marginTop="4dp" />
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="sans-serif" />
 
             </LinearLayout>
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
                 android:src="@drawable/right_arrow"
-                android:contentDescription="Arrow Right" />
+                android:contentDescription="Arrow Right"
+                android:tint="#00ccff" />
 
         </LinearLayout>
 
-        <!-- Sign Out -->
+        <!-- Sign Out Card -->
         <LinearLayout
             android:id="@+id/signOutCard"
             android:layout_width="match_parent"
@@ -191,30 +262,49 @@
             android:gravity="center_vertical">
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:src="@drawable/signout_icon"
-                android:contentDescription="Sign Out Icon" />
+                android:contentDescription="Sign Out Icon"
+                android:tint="#00ccff" />
 
-            <TextView
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Sign Out"
-                android:fontFamily="monospace"
-                android:textSize="16sp"
-                android:textColor="#ffffff"
-                android:layout_marginStart="16dp" />
+                android:orientation="vertical"
+                android:layout_marginStart="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sign Out"
+                    android:textSize="15sp"
+                    android:textColor="#ffffff"
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Exit your account"
+                    android:textSize="11sp"
+                    android:textColor="#888888"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="sans-serif" />
+
+            </LinearLayout>
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
                 android:src="@drawable/right_arrow"
-                android:contentDescription="Arrow Right" />
+                android:contentDescription="Arrow Right"
+                android:tint="#00ccff" />
 
         </LinearLayout>
 
-        <!-- Delete Account -->
+        <!-- Delete Account Card -->
         <LinearLayout
             android:id="@+id/deleteAccountCard"
             android:layout_width="match_parent"
@@ -222,75 +312,98 @@
             android:orientation="horizontal"
             android:background="@drawable/card_bg"
             android:padding="16dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="32dp"
             android:gravity="center_vertical">
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:src="@drawable/delete_icon"
-                android:contentDescription="Delete Icon" />
+                android:contentDescription="Delete Icon"
+                android:tint="#ff6b6b" />
 
-            <TextView
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Delete Account"
-                android:fontFamily="monospace"
-                android:textSize="16sp"
-                android:textColor="#ff6b6b"
-                android:layout_marginStart="16dp" />
+                android:orientation="vertical"
+                android:layout_marginStart="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Delete Account"
+                    android:textSize="15sp"
+                    android:textColor="#ff6b6b"
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Permanently delete"
+                    android:textSize="11sp"
+                    android:textColor="#888888"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="sans-serif" />
+
+            </LinearLayout>
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
                 android:src="@drawable/right_arrow"
-                android:contentDescription="Arrow Right" />
+                android:contentDescription="Arrow Right"
+                android:tint="#ff6b6b" />
 
         </LinearLayout>
 
-        <!-- System Status Section -->
+        <!-- SYSTEM STATUS SECTION -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="SYSTEM STATUS"
             android:fontFamily="monospace"
-            android:textSize="12sp"
-            android:textColor="#888888"
+            android:textSize="11sp"
+            android:textColor="#00ccff"
             android:textStyle="bold"
-            android:layout_marginBottom="12dp" />
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="16dp" />
 
+        <!-- System Status Card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/card_bg"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:layout_marginBottom="20dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="12dp">
+                android:layout_marginBottom="16dp">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Biometric Engine:"
-                    android:fontFamily="monospace"
-                    android:textSize="14sp"
-                    android:textColor="#ffffff" />
+                    android:textSize="13sp"
+                    android:textColor="#ffffff"
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/biometricStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="ONLINE"
-                    android:fontFamily="monospace"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textColor="#00ff00"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:fontFamily="monospace" />
 
             </LinearLayout>
 
@@ -298,25 +411,26 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="12dp">
+                android:layout_marginBottom="16dp">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Last Sync:"
-                    android:fontFamily="monospace"
-                    android:textSize="14sp"
-                    android:textColor="#ffffff" />
+                    android:textSize="13sp"
+                    android:textColor="#ffffff"
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/lastSync"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="3h ago"
-                    android:fontFamily="monospace"
-                    android:textSize="14sp"
-                    android:textColor="#888888" />
+                    android:textSize="13sp"
+                    android:textColor="#888888"
+                    android:fontFamily="sans-serif" />
 
             </LinearLayout>
 
@@ -330,30 +444,375 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Security Level:"
-                    android:fontFamily="monospace"
-                    android:textSize="14sp"
-                    android:textColor="#ffffff" />
+                    android:textSize="13sp"
+                    android:textColor="#ffffff"
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/securityLevel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="HIGH"
-                    android:fontFamily="monospace"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textColor="#00ff00"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:fontFamily="monospace" />
 
             </LinearLayout>
 
         </LinearLayout>
 
-
-
-
     </LinearLayout>
 
-
-
-
 </ScrollView>
+
+
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="match_parent"-->
+<!--    android:background="#0a0e27">-->
+<!--    -->
+<!--    <LinearLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="vertical"-->
+<!--        android:padding="20dp">-->
+
+<!--        &lt;!&ndash;starting w profile header&ndash;&gt;-->
+
+<!--        <LinearLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="vertical"-->
+<!--            android:gravity="center"-->
+<!--            android:paddingTop="30dp"-->
+<!--            android:paddingBottom="20dp">-->
+
+<!--            <FrameLayout-->
+<!--                android:layout_width="100dp"-->
+<!--                android:layout_height="100dp"-->
+<!--                android:background="@drawable/circular_shapepfp"-->
+<!--                android:padding="2dp">-->
+
+<!--                <ImageView-->
+<!--                    android:id="@+id/profilePic"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:background="@drawable/circular_shapepfp"-->
+<!--                    android:clipToOutline="true"-->
+<!--                    android:contentDescription="@string/profile_picture"-->
+<!--                    android:scaleType="centerCrop"-->
+<!--                    android:src="@drawable/profile_picture2" />-->
+<!--            </FrameLayout>-->
+
+<!--            <TextView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:id="@+id/username"-->
+<!--                android:text="Adam James"-->
+<!--                android:textColor="#ffffff"-->
+<!--                android:textSize="18sp"-->
+<!--                android:paddingTop="10dp"/>-->
+
+<!--            <TextView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:id="@+id/useremail"-->
+<!--                android:text="adam201@gmail.com"-->
+<!--                android:textSize="17sp"-->
+<!--                android:textColor="#888889"-->
+<!--                android:layout_marginTop="6dp"/>-->
+
+<!--            <TextView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:id="@+id/status"-->
+<!--                android:text="STATUS: ACTIVE"-->
+<!--                android:textSize="15sp"-->
+<!--                android:layout_marginTop="10dp"-->
+<!--                android:textColor="#ffffff"/>-->
+<!--            &lt;!&ndash;change font and make status blue and active word, white&ndash;&gt;-->
+
+
+<!--        </LinearLayout>-->
+
+<!--        &lt;!&ndash;section head: account info&ndash;&gt;-->
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:id="@+id/accountInfo"-->
+<!--            android:text="   ACCOUNT INFO"-->
+<!--            android:fontFamily="monospace"-->
+<!--            android:textSize="16sp"/>-->
+
+<!--        &lt;!&ndash; Change Password &ndash;&gt;-->
+<!--        <LinearLayout-->
+<!--            android:id="@+id/changePasswordCard"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal"-->
+<!--            android:background="@drawable/card_bg"-->
+<!--            android:padding="16dp"-->
+<!--            android:layout_marginBottom="12dp"-->
+<!--            android:gravity="center_vertical">-->
+
+<!--            <ImageView-->
+<!--                android:layout_width="24dp"-->
+<!--                android:layout_height="24dp"-->
+<!--                android:src="@drawable/lock_icon"-->
+<!--                android:contentDescription="Lock Icon" />-->
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_weight="1"-->
+<!--                android:orientation="vertical"-->
+<!--                android:layout_marginStart="16dp">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Change Password"-->
+<!--                    android:textSize="16sp"-->
+<!--                    android:textColor="#ffffff" />-->
+
+<!--                <TextView-->
+<!--                    android:id="@+id/lastPasswordChange"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Last changed 25 days ago"-->
+<!--                    android:textSize="12sp"-->
+<!--                    android:textColor="#888888"-->
+<!--                    android:layout_marginTop="4dp" />-->
+
+<!--            </LinearLayout>-->
+
+<!--            <ImageView-->
+<!--                android:layout_width="24dp"-->
+<!--                android:layout_height="24dp"-->
+<!--                android:src="@drawable/right_arrow"-->
+<!--                android:contentDescription="Arrow Right" />-->
+
+<!--        </LinearLayout>-->
+
+<!--        &lt;!&ndash; Active Sessions &ndash;&gt;-->
+<!--        <LinearLayout-->
+<!--            android:id="@+id/activeSessionsCard"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal"-->
+<!--            android:background="@drawable/card_bg"-->
+<!--            android:padding="16dp"-->
+<!--            android:layout_marginBottom="12dp"-->
+<!--            android:gravity="center_vertical">-->
+
+<!--            <ImageView-->
+<!--                android:layout_width="24dp"-->
+<!--                android:layout_height="24dp"-->
+<!--                android:src="@drawable/devices_icon"-->
+<!--                android:contentDescription="Devices Icon" />-->
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_weight="1"-->
+<!--                android:orientation="vertical"-->
+<!--                android:layout_marginStart="16dp">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Active Sessions"-->
+<!--                    android:textSize="16sp"-->
+<!--                    android:textColor="#ffffff" />-->
+
+<!--                <TextView-->
+<!--                    android:id="@+id/activeDevicesCount"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="2 devices connected"-->
+<!--                    android:textSize="12sp"-->
+<!--                    android:textColor="#888888"-->
+<!--                    android:layout_marginTop="4dp" />-->
+
+<!--            </LinearLayout>-->
+
+<!--            <ImageView-->
+<!--                android:layout_width="24dp"-->
+<!--                android:layout_height="24dp"-->
+<!--                android:src="@drawable/right_arrow"-->
+<!--                android:contentDescription="Arrow Right" />-->
+
+<!--        </LinearLayout>-->
+
+<!--        &lt;!&ndash; Sign Out &ndash;&gt;-->
+<!--        <LinearLayout-->
+<!--            android:id="@+id/signOutCard"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal"-->
+<!--            android:background="@drawable/card_bg"-->
+<!--            android:padding="16dp"-->
+<!--            android:layout_marginBottom="12dp"-->
+<!--            android:gravity="center_vertical">-->
+
+<!--            <ImageView-->
+<!--                android:layout_width="24dp"-->
+<!--                android:layout_height="24dp"-->
+<!--                android:src="@drawable/signout_icon"-->
+<!--                android:contentDescription="Sign Out Icon" />-->
+
+<!--            <TextView-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_weight="1"-->
+<!--                android:text="Sign Out"-->
+<!--                android:textSize="16sp"-->
+<!--                android:textColor="#ffffff"-->
+<!--                android:layout_marginStart="16dp" />-->
+
+<!--            <ImageView-->
+<!--                android:layout_width="24dp"-->
+<!--                android:layout_height="24dp"-->
+<!--                android:src="@drawable/right_arrow"-->
+<!--                android:contentDescription="Arrow Right" />-->
+
+<!--        </LinearLayout>-->
+
+<!--        &lt;!&ndash; Delete Account &ndash;&gt;-->
+<!--        <LinearLayout-->
+<!--            android:id="@+id/deleteAccountCard"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal"-->
+<!--            android:background="@drawable/card_bg"-->
+<!--            android:padding="16dp"-->
+<!--            android:layout_marginBottom="24dp"-->
+<!--            android:gravity="center_vertical">-->
+
+<!--            <ImageView-->
+<!--                android:layout_width="24dp"-->
+<!--                android:layout_height="24dp"-->
+<!--                android:src="@drawable/delete_icon"-->
+<!--                android:contentDescription="Delete Icon" />-->
+
+<!--            <TextView-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_weight="1"-->
+<!--                android:text="Delete Account"-->
+<!--                android:textSize="16sp"-->
+<!--                android:textColor="#ff6b6b"-->
+<!--                android:layout_marginStart="16dp" />-->
+
+<!--            <ImageView-->
+<!--                android:layout_width="24dp"-->
+<!--                android:layout_height="24dp"-->
+<!--                android:src="@drawable/right_arrow"-->
+<!--                android:contentDescription="Arrow Right" />-->
+
+<!--        </LinearLayout>-->
+
+<!--        &lt;!&ndash; System Status Section &ndash;&gt;-->
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="SYSTEM STATUS"-->
+<!--            android:textSize="12sp"-->
+<!--            android:textColor="#888888"-->
+<!--            android:textStyle="bold"-->
+<!--            android:layout_marginBottom="12dp" />-->
+
+<!--        <LinearLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="vertical"-->
+<!--            android:background="@drawable/card_bg"-->
+<!--            android:padding="16dp">-->
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="horizontal"-->
+<!--                android:layout_marginBottom="12dp">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:text="Biometric Engine:"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:textColor="#ffffff" />-->
+
+<!--                <TextView-->
+<!--                    android:id="@+id/biometricStatus"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="ONLINE"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:textColor="#00ff00"-->
+<!--                    android:textStyle="bold" />-->
+
+<!--            </LinearLayout>-->
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="horizontal"-->
+<!--                android:layout_marginBottom="12dp">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:text="Last Sync:"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:textColor="#ffffff" />-->
+
+<!--                <TextView-->
+<!--                    android:id="@+id/lastSync"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="3h ago"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:textColor="#888888" />-->
+
+<!--            </LinearLayout>-->
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="horizontal">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:text="Security Level:"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:textColor="#ffffff" />-->
+
+<!--                <TextView-->
+<!--                    android:id="@+id/securityLevel"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="HIGH"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:textColor="#00ff00"-->
+<!--                    android:textStyle="bold" />-->
+
+<!--            </LinearLayout>-->
+
+<!--        </LinearLayout>-->
+
+
+
+
+<!--    </LinearLayout>-->
+
+
+
+
+<!--</ScrollView>-->
