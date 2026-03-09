@@ -1,13 +1,12 @@
-package com.example.z_tas // Ensure this matches your actual package name
+package com.example.z_tas
 
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
-import kotlin.jvm.java
-
 
 class LoginActivity : AppCompatActivity() {
 
@@ -15,20 +14,36 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login_page)
 
-        // Find the views - These will stay red if R.id matches don't exist in activity_login.xml
+        val etName = findViewById<EditText>(R.id.etName)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         val tvToRegister = findViewById<TextView>(R.id.tvToRegister)
 
         // Switch to Register Page
         tvToRegister.setOnClickListener {
-            val intent = Intent(this,RegistrationPage::class.java)
+            val intent = Intent(this, RegistrationPage::class.java)
             startActivity(intent)
-            finish() // Close login so 'back' button doesn't loop forever
+            finish()
         }
 
         // Login Action
         btnLogin.setOnClickListener {
-            // Logic for secure login
+
+            val name = etName.text.toString().trim()
+
+            // Regex: only letters allowed
+            val namePattern = Regex("^[A-Za-z]+$")
+
+            if (name.isEmpty()) {
+                etName.error = "Name cannot be empty"
+                return@setOnClickListener
+            }
+
+            if (!namePattern.matches(name)) {
+                etName.error = "Name should contain only letters"
+                return@setOnClickListener
+            }
+
+            // If validation passes
             Toast.makeText(this, "Attempting Secure Login...", Toast.LENGTH_SHORT).show()
         }
     }
