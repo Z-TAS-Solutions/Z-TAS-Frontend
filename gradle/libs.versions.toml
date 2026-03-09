@@ -1,5 +1,9 @@
 [versions]
+<<<<<<< HEAD
+agp = "9.1.0-alpha05"
+=======
 agp = "9.0.0"
+>>>>>>> origin/main
 coreKtx = "1.10.1"
 junit = "4.13.2"
 junitVersion = "1.1.5"
