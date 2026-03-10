@@ -1,4 +1,4 @@
-package com.example.splashscreen
+package package com.example.z_tas
 
 import android.os.Bundle
 import android.view.View
