@@ -24,3 +24,5 @@ local.properties
 *.log
 *.apk
 *.ap_
+.vscode/
+settings.gradle.kts
