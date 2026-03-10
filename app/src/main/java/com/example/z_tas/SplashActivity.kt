@@ -1,4 +1,4 @@
-package com.example.splashscreen
+package com.example.z_tas
 
 import android.content.Intent
 import android.os.Bundle

@@ -1,12 +1,12 @@
-package com.ztas.app
+package com.example.z_tas
 
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.example.z_tas.R
 
-class MainActivity : AppCompatActivity() {
+
+class PasskeyActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

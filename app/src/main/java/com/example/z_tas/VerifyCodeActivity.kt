@@ -58,7 +58,7 @@ class VerifyCodeActivity : AppCompatActivity() {
         }
 
         btnVerify.setOnClickListener {
-            startActivity(Intent(this, VerifyCodeActivity::class.java))
+            startActivity(Intent(this, SuccessActivity::class.java))
         }
     }
 

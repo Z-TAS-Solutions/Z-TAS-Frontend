@@ -1,4 +1,4 @@
-package com.example.z_tas
+package package com.example.z_tas
 
 import org.junit.Test
 

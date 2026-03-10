@@ -1,4 +1,4 @@
-package com.example.splashscreen
+package com.example.z_tas
 
 import android.view.LayoutInflater
 import android.view.View
