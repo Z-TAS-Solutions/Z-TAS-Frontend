@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">  //package="com.example.splashscreen"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -11,34 +11,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ZTAS">
-        <activity
-            android:name=".VerifyCodeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".OtpInputPage"
-            android:exported="false" />
-        <activity
-            android:name=".LoginPage"
-            android:exported="false" />
-        <activity
-            android:name=".RegistrationPage"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-    <application
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
 
         <activity
-            android:name=".NotificationPage"
+            android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -46,22 +21,15 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".MainActivity"
-<<<<<<< HEAD
-            android:exported="false"
-            android:theme="@style/Theme.App.SplashScreen" />
-=======
-            android:exported="true"
-            android:theme="@style/Theme.SplashScreen" />
+        <activity android:name=".MainActivity" android:exported="false" />
+        <activity android:name=".NotificationPage" android:exported="false" />
 
-        <!-- Other activities -->
-        <activity
-            android:name=".NotificationPage"
-            android:exported="false" />
+        
 
->>>>>>> origin/main
->>>>>>> 1b4453d20215cb0bba59fb47f12c94958cf1181f
+        <activity android:name="com.example.z_tas.LoginActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.SuccessActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.PasskeyActivity" android:exported="false" />
+
     </application>
 
 </manifest>
