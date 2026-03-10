@@ -1,4 +1,4 @@
-package package com.example.z_tas
+package com.example.z_tas
 
 import android.view.LayoutInflater
 import android.view.View

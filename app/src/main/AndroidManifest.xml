@@ -13,7 +13,7 @@
         android:theme="@style/Theme.ZTAS">
 
         <activity
-            android:name=".SplashActivity"
+            android:name="com.example.z_tas.SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,11 +21,11 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".MainActivity" android:exported="false" />
-        <activity android:name=".NotificationPage" android:exported="false" />
-
-        
-
+        <activity android:name="com.example.z_tas.MainActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.NotificationPage" android:exported="false" />
+        <activity android:name="com.example.z_tas.RegistrationPage" android:exported="false" />
+        <activity android:name="com.example.z_tas.OtpInputPage" android:exported="false" />
+        <activity android:name="com.example.z_tas.VerifyCodeActivity" android:exported="false" />
         <activity android:name="com.example.z_tas.LoginActivity" android:exported="false" />
         <activity android:name="com.example.z_tas.SuccessActivity" android:exported="false" />
         <activity android:name="com.example.z_tas.PasskeyActivity" android:exported="false" />
