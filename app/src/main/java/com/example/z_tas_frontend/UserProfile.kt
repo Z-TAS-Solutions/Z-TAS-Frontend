@@ -1,4 +1,4 @@
-//put package if needed
+package com.example.z_tas_frontend
 
 data class UserProfile (
     val username: String,

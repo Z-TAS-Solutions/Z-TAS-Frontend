@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -11,10 +12,10 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:src="@drawable/devices_icon"
-        android:tint="#00ccff"
         android:layout_gravity="center"
         android:layout_marginBottom="16dp"
-        android:contentDescription="Devices Icon" />
+        android:contentDescription="Devices Icon"
+        app:tint="#00ccff" />
 
     <!-- Title -->
     <TextView
@@ -47,9 +48,9 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/devices_icon"
-            android:tint="#00ccff"
             android:layout_marginEnd="12dp"
-            android:contentDescription="Device Icon" />
+            android:contentDescription="Device Icon"
+            app:tint="#00ccff" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -91,9 +92,9 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/devices_icon"
-            android:tint="#888888"
             android:layout_marginEnd="12dp"
-            android:contentDescription="Device Icon" />
+            android:contentDescription="Device Icon"
+            app:tint="#888888" />
 
         <LinearLayout
             android:layout_width="0dp"

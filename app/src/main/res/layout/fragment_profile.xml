@@ -157,7 +157,7 @@
                 android:layout_height="28dp"
                 android:src="@drawable/lock_icon"
                 android:contentDescription="Lock Icon"
-                android:tint="#00ccff" />
+                app:tint="#00ccff" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -191,7 +191,7 @@
                 android:layout_height="20dp"
                 android:src="@drawable/right_arrow"
                 android:contentDescription="Arrow Right"
-                android:tint="#00ccff" />
+                app:tint="#00ccff" />
 
         </LinearLayout>
 
@@ -211,7 +211,7 @@
                 android:layout_height="28dp"
                 android:src="@drawable/devices_icon"
                 android:contentDescription="Devices Icon"
-                android:tint="#00ccff" />
+                app:tint="#00ccff" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -246,7 +246,7 @@
                 android:layout_height="20dp"
                 android:src="@drawable/right_arrow"
                 android:contentDescription="Arrow Right"
-                android:tint="#00ccff" />
+                app:tint="#00ccff" />
 
         </LinearLayout>
 
@@ -266,7 +266,7 @@
                 android:layout_height="28dp"
                 android:src="@drawable/signout_icon"
                 android:contentDescription="Sign Out Icon"
-                android:tint="#00ccff" />
+                app:tint="#00ccff" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -300,7 +300,7 @@
                 android:layout_height="20dp"
                 android:src="@drawable/right_arrow"
                 android:contentDescription="Arrow Right"
-                android:tint="#00ccff" />
+                app:tint="#00ccff" />
 
         </LinearLayout>
 
@@ -320,7 +320,7 @@
                 android:layout_height="28dp"
                 android:src="@drawable/delete_icon"
                 android:contentDescription="Delete Icon"
-                android:tint="#ff6b6b" />
+                app:tint="#ff6b6b" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -354,7 +354,7 @@
                 android:layout_height="20dp"
                 android:src="@drawable/right_arrow"
                 android:contentDescription="Arrow Right"
-                android:tint="#ff6b6b" />
+                app:tint="#ff6b6b" />
 
         </LinearLayout>
 

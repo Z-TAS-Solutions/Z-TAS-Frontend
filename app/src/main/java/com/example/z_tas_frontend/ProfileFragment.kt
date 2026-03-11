@@ -1,4 +1,5 @@
-import android.content.Intent
+package com.example.z_tas_frontend
+
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -6,11 +7,9 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.fragment.app.Fragment
-import com.example.ztas_frontend_rafa.R
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import kotlin.jvm.java
+import androidx.fragment.app.Fragment
 
 class ProfileFragment : Fragment() {
 
