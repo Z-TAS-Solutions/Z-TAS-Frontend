@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Z-TAS-FrontEnd"
+rootProject.name = "Z-TAS"
 include(":app")
  
