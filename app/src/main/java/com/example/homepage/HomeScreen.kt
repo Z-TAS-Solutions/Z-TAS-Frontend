@@ -9,11 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,24 +20,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.homepage.ui.theme.HomePageTheme
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
-import kotlin.random.Random
 import androidx.compose.foundation.Image
 
-// Professional Cyber Security Palette
-val DeepNavy = Color(0xFF0B0E1A)
-val CardBackground = Color(0xFF1A1F2E)
-val AccentBlue = Color(0xFF2196F3)
+// --- UPDATED COLORS TO MATCH NOTIFICATION PAGE ---
+val DeepNavy = Color(0xFF070B14)      // Pitch black/dark blue background
+val CardBackground = Color(0xFF111721) // Darker card surface
+val ZTasCyan = Color(0xFF00D1FF)       // The signature Electric Cyan
 val CriticalRed = Color(0xFFFF5252)
 val SuccessGreen = Color(0xFF4CAF50)
 val TextPrimary = Color(0xFFFFFFFF)
 val TextSecondary = Color(0xFF8B9CB7)
-val BorderSubtle = Color(0xFF2A3142)
+val BorderCyanSubtle = Color(0xFF00D1FF).copy(alpha = 0.3f)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,9 +48,8 @@ fun HomeScreen() {
     )
 
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().background(DeepNavy)
     ) {
-        // Professional cyber background
         ProfessionalCyberBackground()
 
         Scaffold(
@@ -65,29 +58,34 @@ fun HomeScreen() {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = DeepNavy.copy(alpha = 0.95f),
-                        titleContentColor = TextPrimary
+                        titleContentColor = ZTasCyan // Title now Cyan
                     ),
                     title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.offset(x = (-11).dp)
+                        ) {
                             Image(
-                                painter = painterResource(id = R.drawable.logo_bg), // Make sure this matches your filename!
+                                painter = painterResource(id = R.drawable.logo_bg),
                                 contentDescription = "App Logo",
                                 modifier = Modifier
-                                    .size(85.dp) // Adjust size as needed
-                                    .clip(RoundedCornerShape(4.dp)) // Optional: rounds logo corners
+                                    .width(75.dp)
+                                    .height(50.dp)
+                                    .clip(RoundedCornerShape(4.dp))
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(0.dp))
                             Column {
                                 Text(
-                                    "ZTAS Security",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
+                                    "Z-TAS SECURITY", // All caps for that industrial look
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 16.sp,
+                                    letterSpacing = 1.sp
                                 )
                                 Text(
-                                    "Zero Trust Access",
+                                    "ZERO TOUCH AUTHENTICATION",
                                     fontSize = 10.sp,
                                     color = TextSecondary,
-                                    fontWeight = FontWeight.Normal
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
@@ -102,13 +100,13 @@ fun HomeScreen() {
                             Box(
                                 modifier = Modifier
                                     .size(32.dp)
-                                    .background(CriticalRed.copy(alpha = 0.15f), CircleShape),
+                                    .background(ZTasCyan.copy(alpha = 0.1f), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Notifications,
                                     contentDescription = "Notifications",
-                                    tint = CriticalRed,
+                                    tint = ZTasCyan,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -125,15 +123,17 @@ fun HomeScreen() {
             ) {
                 // Welcome header
                 Text(
-                    "Welcome back, Alex",
+                    "WELCOME, USERNAME", // Changed to All Caps
                     color = TextPrimary,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp
                 )
                 Text(
-                    "Your security status is optimal",
-                    color = TextSecondary,
-                    fontSize = 14.sp,
+                    "SYSTEM STATUS: OPTIMAL", // Industrial status text
+                    color = ZTasCyan,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 4.dp)
                 )
 
@@ -145,13 +145,13 @@ fun HomeScreen() {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     SecurityMetricCard(
-                        title = "Active Sessions",
-                        value = "3",
+                        title = "ACTIVE SESSIONS",
+                        value = "03",
                         trend = "+1",
                         modifier = Modifier.weight(1f)
                     )
                     SecurityMetricCard(
-                        title = "Threats Blocked",
+                        title = "THREATS BLOCKED",
                         value = "12",
                         trend = "+5",
                         isNegative = false,
@@ -168,16 +168,18 @@ fun HomeScreen() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Recent Activity",
+                        "RECENT ACTIVITY",
                         color = TextPrimary,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
                     )
                     TextButton(onClick = {}) {
                         Text(
-                            "View All",
-                            color = AccentBlue,
-                            fontSize = 13.sp
+                            "VIEW ALL",
+                            color = ZTasCyan,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -204,11 +206,11 @@ fun SecurityMetricCard(
 ) {
     Card(
         modifier = modifier.height(100.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp), // Sharper corners
         colors = CardDefaults.cardColors(
-            containerColor = CardBackground.copy(alpha = 0.7f)
+            containerColor = CardBackground
         ),
-        border = BorderStroke(1.dp, BorderSubtle)
+        border = BorderStroke(1.dp, BorderCyanSubtle) // Cyan Border matching Notifications
     ) {
         Column(
             modifier = Modifier
@@ -219,8 +221,8 @@ fun SecurityMetricCard(
             Text(
                 title,
                 color = TextSecondary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
             )
             Row(
                 verticalAlignment = Alignment.Bottom,
@@ -229,15 +231,15 @@ fun SecurityMetricCard(
             ) {
                 Text(
                     value,
-                    color = TextPrimary,
+                    color = ZTasCyan, // Value now Cyan
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.ExtraBold
                 )
                 Text(
                     trend,
-                    color = if (isNegative) CriticalRed else SuccessGreen,
+                    color = if (isNegative) CriticalRed else ZTasCyan,
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
@@ -247,112 +249,39 @@ fun SecurityMetricCard(
 @Composable
 fun ProfessionalCyberBackground() {
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val width = size.width
-        val height = size.height
-
-        // Base dark gradient
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFF0B0E1A),
-                    Color(0xFF151923),
-                    Color(0xFF0B0E1A)
-                )
-            )
-        )
-
-        // Subtle center glow
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    Color(0xFF1A3D5B).copy(alpha = 0.15f),
-                    Color.Transparent
-                ),
-                center = Offset(width * 0.5f, height * 0.3f),
-                radius = height * 0.5f
-            ),
-            center = Offset(width * 0.5f, height * 0.3f),
-            radius = height * 0.5f
-        )
-
-        // Minimal stars
-        drawMinimalStars(this, width, height)
-
-        // Clean grid lines
-        drawGridPattern(this, width, height)
-    }
-}
-
-fun drawMinimalStars(scope: DrawScope, width: Float, height: Float) {
-    val random = Random(42)
-    repeat(80) {
-        val x = random.nextFloat() * width
-        val y = random.nextFloat() * height
-        val size = random.nextFloat() * 1f + 0.5f
-        val alpha = random.nextFloat() * 0.3f + 0.2f
-
-        scope.drawCircle(
-            color = Color.White.copy(alpha = alpha),
-            radius = size,
-            center = Offset(x, y)
-        )
+        drawRect(color = DeepNavy)
+        drawGridPattern(this, size.width, size.height)
     }
 }
 
 fun drawGridPattern(scope: DrawScope, width: Float, height: Float) {
-    val gridColor = Color(0xFF2A3142).copy(alpha = 0.3f)
-    val spacing = 60f
-
-    // Vertical lines
-    var x = spacing
+    val gridColor = Color(0xFF2A3142).copy(alpha = 0.2f)
+    val spacing = 80f
+    var x = 0f
     while (x < width) {
-        scope.drawLine(
-            color = gridColor,
-            start = Offset(x, 0f),
-            end = Offset(x, height),
-            strokeWidth = 0.5f
-        )
+        scope.drawLine(gridColor, Offset(x, 0f), Offset(x, height), 0.5f)
         x += spacing
     }
-
-    // Horizontal lines
-    var y = spacing
+    var y = 0f
     while (y < height) {
-        scope.drawLine(
-            color = gridColor,
-            start = Offset(0f, y),
-            end = Offset(width, y),
-            strokeWidth = 0.5f
-        )
+        scope.drawLine(gridColor, Offset(0f, y), Offset(width, y), 0.5f)
         y += spacing
     }
 }
 
 @Composable
 fun ProfessionalActivityCard(item: ActivityItem) {
-    val iconBg = when {
-        item.isCritical -> CriticalRed.copy(alpha = 0.15f)
-        else -> SuccessGreen.copy(alpha = 0.15f)
-    }
-
-    val iconColor = when {
-        item.isCritical -> CriticalRed
-        else -> SuccessGreen
-    }
-
-    val borderColor = if (item.isCritical) {
-        CriticalRed.copy(alpha = 0.3f)
-    } else {
-        BorderSubtle
-    }
+    // Icons now use the Notification Page style: Cyan on Dark Circle
+    val iconBg = Color(0xFF1A2332)
+    val iconColor = if (item.isCritical) CriticalRed else ZTasCyan
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = CardBackground.copy(alpha = 0.7f)
+            containerColor = CardBackground
         ),
-        border = BorderStroke(1.dp, borderColor)
+        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.05f))
     ) {
         Row(
             modifier = Modifier
@@ -360,11 +289,10 @@ fun ProfessionalActivityCard(item: ActivityItem) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(44.dp)
+                    .clip(CircleShape) // Circle icons like notifications
                     .background(iconBg),
                 contentAlignment = Alignment.Center
             ) {
@@ -372,43 +300,33 @@ fun ProfessionalActivityCard(item: ActivityItem) {
                     imageVector = item.icon,
                     contentDescription = null,
                     tint = iconColor,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Content
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    item.title,
-                    fontWeight = FontWeight.SemiBold,
+                    item.title.uppercase(), // All caps
+                    fontWeight = FontWeight.Bold,
                     color = TextPrimary,
-                    fontSize = 14.sp
+                    fontSize = 13.sp
                 )
-                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     item.device,
                     color = TextSecondary,
-                    fontSize = 12.sp
+                    fontSize = 11.sp
                 )
-                if (item.subtitle.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        item.subtitle,
-                        color = TextSecondary.copy(alpha = 0.7f),
-                        fontSize = 11.sp
-                    )
-                }
             }
 
-            // Status indicator
+            // Unread Dot like the notification page
             if (item.isCritical) {
                 Box(
                     modifier = Modifier
                         .size(8.dp)
                         .clip(CircleShape)
-                        .background(CriticalRed)
+                        .background(ZTasCyan)
                 )
             }
         }
