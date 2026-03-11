@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.homepage"
+    namespace = "com.example.z_tas"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.example.homepage"
+        applicationId = "com.example.z_tas"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
