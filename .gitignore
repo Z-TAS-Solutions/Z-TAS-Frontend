@@ -1,8 +1,10 @@
+/build
 *.iml
 .gradle/
 .idea/
 .kotlin/
 /local.properties
+.idea/
 .DS_Store
 build/
 /captures
@@ -19,6 +21,7 @@ gradlew
 local.properties
 /.gradle
 /local.properties
+/.idea
 *.log
 *.apk
 *.ap_
