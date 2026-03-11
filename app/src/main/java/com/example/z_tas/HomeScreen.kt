@@ -1,4 +1,4 @@
-package com.example.homepage
+package com.example.z_tas
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
+import androidx.compose.material3.R
 
 // --- UPDATED COLORS TO MATCH NOTIFICATION PAGE ---
 val DeepNavy = Color(0xFF070B14)      // Pitch black/dark blue background
