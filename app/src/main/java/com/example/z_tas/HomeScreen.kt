@@ -25,7 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
-import androidx.compose.material3.R
+import com.example.z_tas.R
 
 // --- UPDATED COLORS TO MATCH NOTIFICATION PAGE ---
 val DeepNavy = Color(0xFF070B14)      // Pitch black/dark blue background
@@ -344,7 +344,5 @@ data class ActivityItem(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun HomeScreenPreview() {
-    HomePageTheme {
-        HomeScreen()
-    }
+    HomeScreen()
 }
