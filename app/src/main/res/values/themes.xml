@@ -1,10 +1,19 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.Ztasfrontendrafa" parent="Theme.Material3.Light.NoActionBar">
-        <item name="android:windowDisablePreview">true</item>
-        <item name="colorPrimary">#00ccff</item>
-        <item name="colorOnPrimary">#0a0e27</item>
+    <style name="Base.Theme.ZTAS" parent="Theme.Material3.DayNight.NoActionBar">
+
     </style>
 
-    <style name="Theme.Ztasfrontendrafa" parent="Base.Theme.Ztasfrontendrafa" />
+    <style name="Theme.ZTAS" parent="Base.Theme.ZTAS" />
+
+    <!-- Normal App Theme -->
+    <style name="Theme.SplashScreen" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/black</item>
+    </style>
+
+    <!-- Splash Screen Theme -->
+    <style name="Theme.App.SplashScreen" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/black</item>
+    </style>
+
 </resources>

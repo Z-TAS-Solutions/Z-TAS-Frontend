@@ -10,16 +10,26 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Ztasfrontendrafa">
+        android:theme="@style/Theme.ZTAS">
+
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.z_tas.OtpInputPage"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name="com.example.z_tas.SplashActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.MainActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.NotificationPage" android:exported="false" />
+        <activity android:name="com.example.z_tas.RegistrationPage" android:exported="false" />
+        <activity android:name="com.example.z_tas.VerifyCodeActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.LoginActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.SuccessActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.PasskeyActivity" android:exported="false" />
+
     </application>
 
 </manifest>

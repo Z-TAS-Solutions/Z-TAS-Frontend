@@ -1,19 +1,11 @@
-package com.example.z_tas_frontend
-
+package com.example.z_tas
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.example.z_tas_frontend.R
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, ProfileFragment())
-                .commit()
-        }
     }
 }
