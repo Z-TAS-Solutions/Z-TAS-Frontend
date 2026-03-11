@@ -1,8 +1,9 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.Ztasfrontendrafa" parent="Theme.Material3.Light.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:windowDisablePreview">true</item>
+        <item name="colorPrimary">#00ccff</item>
+        <item name="colorOnPrimary">#0a0e27</item>
     </style>
 
     <style name="Theme.Ztasfrontendrafa" parent="Base.Theme.Ztasfrontendrafa" />

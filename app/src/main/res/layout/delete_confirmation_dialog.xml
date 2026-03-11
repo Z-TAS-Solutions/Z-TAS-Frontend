@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:padding="24dp"
     android:background="#0a0e27">
@@ -22,7 +22,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Delete Account?"
+        android:text="Confirm Deletion"
         android:textSize="18sp"
         android:textColor="#ff6b6b"
         android:textStyle="bold"
@@ -34,7 +34,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="This action cannot be undone. All your data will be permanently deleted."
+        android:text="Press DELETE to confirm permanent deletion."
         android:textSize="14sp"
         android:textColor="#888888"
         android:fontFamily="sans-serif"
@@ -56,7 +56,7 @@
         android:gravity="end">
 
         <Button
-            android:id="@+id/cancel_button"
+            android:id="@+id/cancel_confirm_button"
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
@@ -68,16 +68,15 @@
             android:layout_marginEnd="12dp" />
 
         <Button
-            android:id="@+id/dialog_delete_btn"
+            android:id="@+id/delete_confirm_button"
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:text="Delete"
+            android:text="DELETE"
             android:textColor="#ffffff"
             android:textSize="14sp"
             android:fontFamily="sans-serif-medium"
             android:textStyle="bold"
-            tools:ignore="ButtonStyle"
             android:background="@drawable/red_button"
             android:backgroundTint="@null"
             app:backgroundTint="@null"/>

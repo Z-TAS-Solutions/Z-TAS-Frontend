@@ -229,15 +229,32 @@ class ProfileFragment : Fragment() {
 
 
     private fun showDeleteConfirmationDialog() {
-        AlertDialog.Builder(requireContext())
-            .setTitle("Are you sure?")
-            .setMessage("Press 'DELETE' to confirm permanent deletion.")
-            .setPositiveButton("Delete") { dialog, which ->
-                Toast.makeText(requireContext(), "Account deleted", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Cancel") { dialog, which ->
-                dialog.dismiss()
-            }
-            .show()
+        val dialogView = LayoutInflater.from(requireContext()).inflate(
+            R.layout.delete_confirmation_dialog,
+            null
+        )
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+
+        // Set transparent background
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val cancelBtn = dialogView.findViewById<Button>(R.id.cancel_confirm_button)
+        val deleteBtn = dialogView.findViewById<Button>(R.id.delete_confirm_button)
+
+        cancelBtn.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        deleteBtn.setOnClickListener {
+            dialog.dismiss()
+            Toast.makeText(requireContext(), "Account deleted", Toast.LENGTH_SHORT).show()
+            // after this: navigate to login screen
+        }
+
+        dialog.show()
     }
 }
