@@ -146,6 +146,7 @@
             android:text="Close"
             android:textColor="#888888"
             android:textSize="14sp"
+            android:backgroundTint="@null"
             android:fontFamily="sans-serif-medium"
             android:background="@drawable/cancel_dialogbutton"
             android:layout_marginEnd="12dp" />
@@ -157,6 +158,7 @@
             android:layout_weight="1"
             android:text="Sign Out Other"
             android:textColor="#0a0e27"
+            android:backgroundTint="@null"
             android:textSize="14sp"
             android:fontFamily="sans-serif-medium"
             android:textStyle="bold"

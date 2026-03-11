@@ -76,6 +76,7 @@
             android:textSize="14sp"
             android:fontFamily="sans-serif-medium"
             android:textStyle="bold"
+            android:backgroundTint="@null"
             android:background="@drawable/primary_dialogbutton" />
 
     </LinearLayout>
