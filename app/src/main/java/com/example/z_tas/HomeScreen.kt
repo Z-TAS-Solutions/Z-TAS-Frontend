@@ -82,7 +82,7 @@ fun HomeScreen() {
                             modifier = Modifier.offset(x = (-11).dp)
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.logo_bg),
+                                painter = painterResource(id = R.drawable.z_taslogo),
                                 contentDescription = "App Logo",
                                 modifier = Modifier
                                     .width(75.dp)
