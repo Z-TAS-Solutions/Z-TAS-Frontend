@@ -3,15 +3,23 @@ package com.example.z_tas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import android.content.Intent
+import androidx.compose.foundation.border
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,10 +35,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import com.example.z_tas.R
 
-// --- UPDATED COLORS TO MATCH NOTIFICATION PAGE ---
-val DeepNavy = Color(0xFF070B14)      // Pitch black/dark blue background
-val CardBackground = Color(0xFF111721) // Darker card surface
-val ZTasCyan = Color(0xFF00D1FF)       // The signature Electric Cyan
+
+val DeepNavy = Color(0xFF070B14)      
+val CardBackground = Color(0xFF111721) 
+val ZTasCyan = Color(0xFF00D1FF)       
 val CriticalRed = Color(0xFFFF5252)
 val SuccessGreen = Color(0xFF4CAF50)
 val TextPrimary = Color(0xFFFFFFFF)
@@ -40,6 +48,13 @@ val BorderCyanSubtle = Color(0xFF00D1FF).copy(alpha = 0.3f)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen() {
+    val context = LocalContext.current
+    var showSessionsDialog by remember { mutableStateOf(false) }
+
+    if (showSessionsDialog) {
+        ZtasSessionsDialog(onDismiss = { showSessionsDialog = false })
+    }
+
     val activities = listOf(
         ActivityItem("Failed Login Attempt", "Unknown Device • 02:05 AM", true, Icons.Default.Close, "Suspicious activity detected"),
         ActivityItem("Access Blocked", "192.168.1.105 • 02:00 AM", true, Icons.Default.Warning, "Unauthorized access prevented"),
@@ -54,11 +69,12 @@ fun HomeScreen() {
 
         Scaffold(
             containerColor = Color.Transparent,
+            bottomBar = { ZtasNavBar(selectedIndex = 0) },
             topBar = {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = DeepNavy.copy(alpha = 0.95f),
-                        titleContentColor = ZTasCyan // Title now Cyan
+                        titleContentColor = ZTasCyan 
                     ),
                     title = {
                         Row(
@@ -76,7 +92,7 @@ fun HomeScreen() {
                             Spacer(modifier = Modifier.width(0.dp))
                             Column {
                                 Text(
-                                    "Z-TAS SECURITY", // All caps for that industrial look
+                                    "Z-TAS SECURITY", 
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 16.sp,
                                     letterSpacing = 1.sp
@@ -92,7 +108,10 @@ fun HomeScreen() {
                     },
                     actions = {
                         IconButton(
-                            onClick = {},
+                            onClick = {
+                                val intent = Intent(context, NotificationPage::class.java)
+                                context.startActivity(intent)
+                            },
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
@@ -123,7 +142,7 @@ fun HomeScreen() {
             ) {
                 // Welcome header
                 Text(
-                    "WELCOME, USERNAME", // Changed to All Caps
+                    "WELCOME, USERNAME", 
                     color = TextPrimary,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -139,25 +158,14 @@ fun HomeScreen() {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Security Overview Cards
-                Row(
+                // Security Overview Card
+                SecurityMetricCard(
+                    title = "ACTIVE SESSIONS",
+                    value = "03",
+                    trend = "+1",
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    SecurityMetricCard(
-                        title = "ACTIVE SESSIONS",
-                        value = "03",
-                        trend = "+1",
-                        modifier = Modifier.weight(1f)
-                    )
-                    SecurityMetricCard(
-                        title = "THREATS BLOCKED",
-                        value = "12",
-                        trend = "+5",
-                        isNegative = false,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                    onClick = { showSessionsDialog = true }
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -174,7 +182,10 @@ fun HomeScreen() {
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
-                    TextButton(onClick = {}) {
+                    TextButton(onClick = {
+                        val intent = Intent(context, NotificationPage::class.java)
+                        context.startActivity(intent)
+                    }) {
                         Text(
                             "VIEW ALL",
                             color = ZTasCyan,
@@ -202,15 +213,16 @@ fun SecurityMetricCard(
     value: String,
     trend: String,
     modifier: Modifier = Modifier,
-    isNegative: Boolean = false
+    isNegative: Boolean = false,
+    onClick: () -> Unit = {}
 ) {
     Card(
-        modifier = modifier.height(100.dp),
-        shape = RoundedCornerShape(12.dp), // Sharper corners
+        modifier = modifier.height(100.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = CardBackground
+            containerColor = Color(0xFF0D1B2A)
         ),
-        border = BorderStroke(1.dp, BorderCyanSubtle) // Cyan Border matching Notifications
+        border = BorderStroke(1.dp, Color(0xFF1E3A5F))
     ) {
         Column(
             modifier = Modifier
@@ -279,9 +291,9 @@ fun ProfessionalActivityCard(item: ActivityItem) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = CardBackground
+            containerColor = Color(0xFF0D1B2A)
         ),
-        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.05f))
+        border = BorderStroke(1.dp, Color(0xFF1E3A5F))
     ) {
         Row(
             modifier = Modifier
@@ -340,6 +352,107 @@ data class ActivityItem(
     val icon: ImageVector,
     val subtitle: String = ""
 )
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ZtasSessionsDialog(onDismiss: () -> Unit) {
+    BasicAlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .fillMaxHeight(0.75f)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color(0xFF0D1B2A))
+            .border(BorderStroke(1.dp, ZTasCyan.copy(alpha = 0.5f)), RoundedCornerShape(24.dp))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .background(ZTasCyan.copy(alpha = 0.1f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = null,
+                    tint = ZTasCyan,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "ACTIVE SESSIONS",
+                color = ZTasCyan,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 2.sp
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(color = ZTasCyan.copy(alpha = 0.2f), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SessionItem("Adam's Samsung S24", "Current Device", true)
+                SessionItem("John's iPhone", "Last active: 5 hours ago", false)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    border = BorderStroke(1.dp, ZTasCyan),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("CLOSE", color = ZTasCyan, fontWeight = FontWeight.Bold)
+                }
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = CriticalRed),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("LOG OUT ALL", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SessionItem(device: String, details: String, isActive: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White.copy(alpha = 0.05f))
+            .border(BorderStroke(1.dp, ZTasCyan.copy(alpha = 0.2f)), RoundedCornerShape(12.dp))
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(if (isActive) SuccessGreen else Color.Gray)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(device, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(
+                details, 
+                color = if (isActive) ZTasCyan else Color.White.copy(alpha = 0.5f), 
+                fontSize = 11.sp,
+                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
+            )
+        }
+    }
+}
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

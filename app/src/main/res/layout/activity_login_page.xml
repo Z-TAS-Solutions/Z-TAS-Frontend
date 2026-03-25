@@ -61,25 +61,13 @@
                     android:hint="Username"
                     android:inputType="text" />
 
-                <EditText
-                    android:id="@+id/etLoginEmail"
-                    style="@style/CyberInputStyle"
-                    android:hint="E-mail"
-                    android:inputType="textEmailAddress" />
-
-                <EditText
-                    android:id="@+id/etLoginPass"
-                    style="@style/CyberInputStyle"
-                    android:hint="Password"
-                    android:inputType="textPassword" />
-
                 <Button
                     android:id="@+id/btnLogin"
                     android:layout_width="match_parent"
                     android:layout_height="55dp"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="18dp"
                     android:background="@drawable/neon_button_bg"
-                    android:text="LOG IN"
+                    android:text="LOGIN WITH PASSKEY"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     app:backgroundTint="@null" />

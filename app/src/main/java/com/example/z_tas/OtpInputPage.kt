@@ -5,8 +5,9 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import kotlin.jvm.java
+
 class OtpInputPage : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -14,22 +15,38 @@ class OtpInputPage : AppCompatActivity() {
         setContentView(R.layout.activity_otp_input_page)
 
         val btnContinue = findViewById<Button>(R.id.btnContinue)
-        val etOtpPhone = findViewById<EditText>(R.id.etOtpPhone)
+        val etOtpPassword = findViewById<EditText>(R.id.etOtpPassword)
+        val etOtpConfirm = findViewById<EditText>(R.id.etOtpConfirm)
         val btnBack = findViewById<ImageButton>(R.id.btnBackVerify)
 
         btnBack.setOnClickListener {
-            onBackPressedDispatcher.onBackPressed() // Professional way to go back
+            onBackPressedDispatcher.onBackPressed()
         }
 
         btnContinue.setOnClickListener {
-            val phone = etOtpPhone.text.toString().trim()
-            if (phone.length < 10) {
-                etOtpPhone.error = "Enter a valid 10-digit number"
-            } else {
-                // Ensure VerifyCodeActivity is created in your project!
-                val intent = Intent(this, VerifyCodeActivity::class.java)
-                startActivity(intent)
+            val otp = etOtpPassword.text.toString().trim()
+            val confirmOtp = etOtpConfirm.text.toString().trim()
+
+            if (otp.isEmpty()) {
+                etOtpPassword.error = "Enter the one-time password"
+                return@setOnClickListener
             }
+
+            if (confirmOtp.isEmpty()) {
+                etOtpConfirm.error = "Re-enter to confirm"
+                return@setOnClickListener
+            }
+
+            if (otp != confirmOtp) {
+                etOtpConfirm.error = "Passwords do not match"
+                return@setOnClickListener
+            }
+
+            // OTP verified, navigate to Passkey activation
+            Toast.makeText(this, "OTP Verified Successfully!", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, PasskeyActivity::class.java)
+            startActivity(intent)
+            finish()
         }
     }
 }

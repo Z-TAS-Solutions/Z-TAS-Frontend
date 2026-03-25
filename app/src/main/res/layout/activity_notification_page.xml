@@ -4,23 +4,42 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/cyber_background">
+    android:background="#070B14">
 
-    <!-- App Title/Logo -->
-    <TextView
-        android:id="@+id/appTitle"
-        android:layout_width="wrap_content"
+    <!-- Standardized Header with Back Arrow -->
+    <LinearLayout
+        android:id="@+id/headerLayout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Z-TAS"
-        android:textColor="#00BFFF"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:letterSpacing="0.3"
-        android:fontFamily="monospace"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="24dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="16dp"
+        android:paddingStart="24dp"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent">
+
+        <ImageView
+            android:id="@+id/backArrow"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/arrow_back"
+            android:contentDescription="Back"
+            app:tint="#00D1FF"
+            android:layout_marginEnd="16dp"
+            android:clickable="true"
+            android:focusable="true"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Z-TAS SECURITY"
+            android:textColor="#00D1FF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-bold"
+            android:letterSpacing="0.08" />
+
+    </LinearLayout>
 
     <!-- Notifications Header with Glow -->
     <androidx.cardview.widget.CardView
@@ -33,7 +52,7 @@
         app:cardBackgroundColor="#0D1B2A"
         app:cardCornerRadius="12dp"
         app:cardElevation="8dp"
-        app:layout_constraintTop_toBottomOf="@id/appTitle"
+        app:layout_constraintTop_toBottomOf="@id/headerLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -49,11 +68,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="SYSTEM NOTIFICATIONS"
-                android:textColor="#00BFFF"
+                android:textColor="#00D1FF"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.2"
-                android:fontFamily="monospace" />
+                android:letterSpacing="0.05"
+                android:fontFamily="sans-serif-bold" />
 
             <TextView
                 android:id="@+id/notifCount"
@@ -123,6 +142,15 @@
         android:paddingEnd="16dp"
         android:clipToPadding="false"
         app:layout_constraintTop_toBottomOf="@id/headerCard"
+        app:layout_constraintBottom_toTopOf="@id/compose_bottom_nav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Bottom Navigation Bar -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/compose_bottom_nav"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

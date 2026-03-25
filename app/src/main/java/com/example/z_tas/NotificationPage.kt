@@ -2,11 +2,14 @@ package com.example.z_tas
 
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 
 class NotificationPage : AppCompatActivity() {
 
@@ -33,6 +36,20 @@ class NotificationPage : AppCompatActivity() {
         tabAll = findViewById(R.id.tabAll)
         tabUnread = findViewById(R.id.tabUnread)
         val btnMarkAllRead = findViewById<TextView>(R.id.btnMarkAllRead)
+        val backArrow = findViewById<ImageView>(android.widget.ImageView::class.java.cast(findViewById(R.id.backArrow))?.id ?: R.id.backArrow)
+        // Wait, I can just do:
+        findViewById<android.widget.ImageView>(R.id.backArrow)?.setOnClickListener {
+            finish()
+        }
+
+        // Setup Bottom Nav Bar
+        val composeView = findViewById<ComposeView>(R.id.compose_bottom_nav)
+        composeView.apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                ZtasNavBar(selectedIndex = 2)
+            }
+        }
 
         // Setup RecyclerView
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -69,30 +86,14 @@ class NotificationPage : AppCompatActivity() {
             listOf(
                 Notification(
                     id = 1,
-                    title = "MFA REQUIRED",
-                    message = "Please complete MFA to proceed with payment.",
-                    time = "5 mins ago",
-                    type = NotificationType.SECURITY,
-                    isRead = false
-                ),
-                Notification(
-                    id = 2,
-                    title = "MFA CODE SENT",
-                    message = "A verification code was sent to your number ending 765.",
-                    time = "5 mins ago",
-                    type = NotificationType.INFO,
-                    isRead = false
-                ),
-                Notification(
-                    id = 3,
-                    title = "IDENTITY VERIFIED",
+                    title = "MFA VERIFIED",
                     message = "Your identity was verified and approved.",
                     time = "4 hrs ago",
                     type = NotificationType.SUCCESS,
                     isRead = true
                 ),
                 Notification(
-                    id = 4,
+                    id = 2,
                     title = "MFA FAILED",
                     message = "Incorrect code entered. Access blocked.",
                     time = "21 hrs ago",
@@ -100,7 +101,7 @@ class NotificationPage : AppCompatActivity() {
                     isRead = true
                 ),
                 Notification(
-                    id = 5,
+                    id = 3,
                     title = "ACCESS DENIED",
                     message = "Your authentication did not meet security requirements.",
                     time = "1 day ago",

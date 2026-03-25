@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -10,10 +12,25 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.ZTAS">
+        android:theme="@style/Theme.ZTAS"
+        tools:replace="android:allowBackup,android:icon,android:label,android:roundIcon,android:theme">
+
+        <!-- FCM Service -->
+        <service
+            android:name=".MfaMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- MFA Action Receiver -->
+        <receiver
+            android:name=".MfaActionReceiver"
+            android:exported="false" />
 
         <activity
-            android:name="com.example.z_tas.OtpInputPage"
+            android:name="com.example.z_tas.SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,14 +38,16 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="com.example.z_tas.SplashActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.OtpInputPage" android:exported="false" />
         <activity android:name="com.example.z_tas.MainActivity" android:exported="false" />
         <activity android:name="com.example.z_tas.NotificationPage" android:exported="false" />
         <activity android:name="com.example.z_tas.RegistrationPage" android:exported="false" />
-        <activity android:name="com.example.z_tas.VerifyCodeActivity" android:exported="false" />
         <activity android:name="com.example.z_tas.LoginActivity" android:exported="false" />
-        <activity android:name="com.example.z_tas.SuccessActivity" android:exported="false" />
         <activity android:name="com.example.z_tas.PasskeyActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.HomeActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.ProfileActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.MFAActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.SettingsActivity" android:exported="false" />
 
     </application>
 

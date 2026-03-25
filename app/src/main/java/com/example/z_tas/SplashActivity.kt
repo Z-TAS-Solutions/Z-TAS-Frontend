@@ -25,10 +25,14 @@ class SplashActivity : AppCompatActivity() {
 
         shimmerLayout.setShimmer(shimmer)
 
-        // Wait a little longer before opening MainActivity
+        // Wait 2-3 seconds before opening LoginActivity
         shimmerLayout.postDelayed({
-            startActivity(Intent(this, MainActivity::class.java))
+            // Check auth state here if applicable, but defaulting to LoginActivity
+            val intent = Intent(this, LoginActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
             finish()
-        }, 4000) // 4 seconds total before moving to app
+        }, 2500) // 2.5 seconds total before moving to app
     }
 }

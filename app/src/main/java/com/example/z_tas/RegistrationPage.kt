@@ -20,60 +20,37 @@ class RegistrationPage : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_registration_page)
 
-        // Input fields
+        // All input fields
         val etName = findViewById<EditText>(R.id.etName)
-        val etPhone = findViewById<EditText>(R.id.etPhone)
         val etEmail = findViewById<EditText>(R.id.etEmail)
-
+        val etNIC = findViewById<EditText>(R.id.etNIC)
+        val etPhone = findViewById<EditText>(R.id.etPhone)
 
         val registerButton = findViewById<Button>(R.id.btnRegister)
 
         registerButton.setOnClickListener {
-
             val name = etName.text.toString().trim()
-            val phone = etPhone.text.toString().trim()
             val email = etEmail.text.toString().trim()
-
+            val nic = etNIC.text.toString().trim()
+            val phone = etPhone.text.toString().trim()
 
             val nameRegex = Regex("^[A-Za-z ]+$")
 
-            // Name validation
-            if (name.isEmpty()) {
-                etName.error = "Name is required"
-                return@setOnClickListener
-            }
+            if (name.isEmpty()) { etName.error = "Name is required"; return@setOnClickListener }
+            if (!nameRegex.matches(name)) { etName.error = "Name should contain only letters"; return@setOnClickListener }
 
-            if (!nameRegex.matches(name)) {
-                etName.error = "Name should contain only letters"
-                return@setOnClickListener
-            }
+            if (email.isEmpty()) { etEmail.error = "Email required"; return@setOnClickListener }
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) { etEmail.error = "Enter a valid email"; return@setOnClickListener }
 
-            // Phone validation
-            if (phone.isEmpty()) {
-                etPhone.error = "Phone number required"
-                return@setOnClickListener
-            }
+            if (nic.isEmpty()) { etNIC.error = "NIC number is required"; return@setOnClickListener }
 
-            if (!phone.matches(Regex("^[0-9]{10}$"))) {
-                etPhone.error = "Enter a valid 10 digit phone number"
-                return@setOnClickListener
-            }
+            if (phone.isEmpty()) { etPhone.error = "Phone number required"; return@setOnClickListener }
+            if (!phone.matches(Regex("^[0-9]{10}$"))) { etPhone.error = "Enter a valid 10 digit phone number"; return@setOnClickListener }
 
-            // Email validation
-            if (email.isEmpty()) {
-                etEmail.error = "Email required"
-                return@setOnClickListener
-            }
-
-            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                etEmail.error = "Enter a valid email"
-                return@setOnClickListener
-            }
-
-
-
-            // If all valid
-            Toast.makeText(this, "Registration Successful!", Toast.LENGTH_SHORT).show()
+            // Navigate to OTP confirmation page
+            val intent = Intent(this, OtpInputPage::class.java)
+            startActivity(intent)
+            finish()
         }
 
         // Login link
