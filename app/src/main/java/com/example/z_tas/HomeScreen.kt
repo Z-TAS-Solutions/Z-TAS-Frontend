@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
@@ -360,14 +362,15 @@ fun ZtasSessionsDialog(onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         modifier = Modifier
             .fillMaxWidth(0.9f)
-            .fillMaxHeight(0.75f)
+            .wrapContentHeight()
             .clip(RoundedCornerShape(24.dp))
             .background(Color(0xFF0D1B2A))
             .border(BorderStroke(1.dp, ZTasCyan.copy(alpha = 0.5f)), RoundedCornerShape(24.dp))
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -396,7 +399,7 @@ fun ZtasSessionsDialog(onDismiss: () -> Unit) {
             HorizontalDivider(color = ZTasCyan.copy(alpha = 0.2f), thickness = 1.dp)
             Spacer(modifier = Modifier.height(16.dp))
             
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SessionItem("Adam's Samsung S24", "Current Device", true)
                 SessionItem("John's iPhone", "Last active: 5 hours ago", false)
             }

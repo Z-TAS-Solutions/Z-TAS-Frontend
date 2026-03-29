@@ -24,8 +24,8 @@
 
             <ImageView
                 android:id="@+id/logo"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
                 android:layout_marginTop="20dp"
                 android:src="@drawable/z_taslogo" />
 
@@ -58,7 +58,7 @@
                 <EditText
                     android:id="@+id/etName"
                     style="@style/CyberInputStyle"
-                    android:hint="Username"
+                    android:hint="Full Name"
                     android:inputType="text" />
 
                 <Button

@@ -38,11 +38,11 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="com.example.z_tas.OtpInputPage" android:exported="false" />
+        <activity android:name="com.example.z_tas.OtpInputPage" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name="com.example.z_tas.MainActivity" android:exported="false" />
         <activity android:name="com.example.z_tas.NotificationPage" android:exported="false" />
-        <activity android:name="com.example.z_tas.RegistrationPage" android:exported="false" />
-        <activity android:name="com.example.z_tas.LoginActivity" android:exported="false" />
+        <activity android:name="com.example.z_tas.RegistrationPage" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:name="com.example.z_tas.LoginActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name="com.example.z_tas.PasskeyActivity" android:exported="false" />
         <activity android:name="com.example.z_tas.HomeActivity" android:exported="false" />
         <activity android:name="com.example.z_tas.ProfileActivity" android:exported="false" />

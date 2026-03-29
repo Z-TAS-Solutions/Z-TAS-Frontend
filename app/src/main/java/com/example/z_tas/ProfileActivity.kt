@@ -31,8 +31,8 @@ class ProfileActivity : AppCompatActivity() {
 
         // sample user's data
         val userProfile = UserProfile(
-            username = "Username",
-            email = "for.example@gmail.com",
+            username = "Adam James",
+            email = "adam15@gmail.com",
             status = "ACTIVE",
             activeDevices = 2,
             biometricEngineStatus = "ONLINE",
@@ -70,9 +70,7 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         // Add new passkey click listener
-        findViewById<LinearLayout>(R.id.changePasswordCard).setOnClickListener {
-            Toast.makeText(this, "Feature coming soon", Toast.LENGTH_SHORT).show()
-        }
+        findViewById<LinearLayout>(R.id.changePasswordCard).setOnClickListener{}
 
         // Active sessions click listener
         findViewById<LinearLayout>(R.id.activeSessionsCard).setOnClickListener {

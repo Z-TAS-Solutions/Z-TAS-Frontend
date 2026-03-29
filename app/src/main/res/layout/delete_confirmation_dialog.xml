@@ -65,6 +65,8 @@
             android:textSize="14sp"
             android:fontFamily="sans-serif-medium"
             android:background="@drawable/cancel_dialogbutton"
+            android:backgroundTint="@null"
+            app:backgroundTint="@null"
             android:layout_marginEnd="12dp" />
 
         <Button
