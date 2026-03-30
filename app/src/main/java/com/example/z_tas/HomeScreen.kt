@@ -1,41 +1,43 @@
 package com.example.z_tas
 
+import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import android.content.Intent
-import androidx.compose.foundation.border
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
-import androidx.compose.foundation.Image
-import com.example.z_tas.R
+import com.example.z_tas.network.NotificationData
+import com.example.z_tas.network.RetrofitClient
+import com.example.z_tas.network.SessionData
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 val DeepNavy = Color(0xFF070B14)      
@@ -52,17 +54,66 @@ val BorderCyanSubtle = Color(0xFF00D1FF).copy(alpha = 0.3f)
 fun HomeScreen() {
     val context = LocalContext.current
     var showSessionsDialog by remember { mutableStateOf(false) }
+    var sessions by remember { mutableStateOf<List<SessionData>>(emptyList()) }
+    var sessionsLoading by remember { mutableStateOf(true) }
+    var sessionsError by remember { mutableStateOf<String?>(null) }
+    var activities by remember { mutableStateOf<List<ActivityItem>>(emptyList()) }
+    var activitiesLoading by remember { mutableStateOf(true) }
 
-    if (showSessionsDialog) {
-        ZtasSessionsDialog(onDismiss = { showSessionsDialog = false })
+    // Fetch sessions + notifications on screen load
+    LaunchedEffect(Unit) {
+        // Sessions
+        try {
+            val response = withContext(Dispatchers.IO) {
+                // TODO: Replace placeholder token with real token
+                RetrofitClient.sessionApi.getSessions("Bearer PLACEHOLDER_TOKEN")
+            }
+            if (response.isSuccessful && response.body() != null) {
+                sessions = response.body()!!.sessions
+            } else {
+                sessionsError = "Failed to load sessions"
+                Log.e("HomeScreen", "Sessions error: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            sessionsError = e.message
+            Log.e("HomeScreen", "Sessions fetch failed", e)
+        } finally {
+            sessionsLoading = false
+        }
+
+        // Notifications (preview — limit 5)
+        try {
+            val notifResponse = withContext(Dispatchers.IO) {
+                RetrofitClient.notificationApi.getNotifications(
+                    token = "Bearer PLACEHOLDER_TOKEN",
+                    limit = 5
+                )
+            }
+            if (notifResponse.isSuccessful && notifResponse.body() != null) {
+                activities = notifResponse.body()!!.notifications.map { it.toActivityItem() }
+            } else {
+                Log.e("HomeScreen", "Notifications error: ${notifResponse.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e("HomeScreen", "Notifications fetch failed", e)
+        } finally {
+            activitiesLoading = false
+        }
     }
 
-    val activities = listOf(
-        ActivityItem("Failed Login Attempt", "Unknown Device • 02:05 AM", true, Icons.Default.Close, "Suspicious activity detected"),
-        ActivityItem("Access Blocked", "192.168.1.105 • 02:00 AM", true, Icons.Default.Warning, "Unauthorized access prevented"),
-        ActivityItem("Successful Login", "MacBook Pro • 01:50 AM", false, Icons.Default.CheckCircle, "San Francisco, CA"),
-        ActivityItem("MFA Verified", "iPhone 15 Pro • 01:40 AM", false, Icons.Default.Lock, "Authentication successful")
-    )
+    if (showSessionsDialog) {
+        ZtasSessionsDialog(
+            sessions = sessions,
+            isLoading = sessionsLoading,
+            onDismiss = { showSessionsDialog = false },
+            onForceLogoutAll = {
+                showSessionsDialog = false
+                context.startActivity(Intent(context, LoginActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                })
+            }
+        )
+    }
 
     Box(
         modifier = Modifier.fillMaxSize().background(DeepNavy)
@@ -163,8 +214,8 @@ fun HomeScreen() {
                 // Security Overview Card
                 SecurityMetricCard(
                     title = "ACTIVE SESSIONS",
-                    value = "03",
-                    trend = "+1",
+                    value = if (sessionsLoading) "--" else String.format("%02d", sessions.size),
+                    trend = if (sessionsLoading) "" else "+${sessions.count { it.current }}",
                     modifier = Modifier.fillMaxWidth(),
                     onClick = { showSessionsDialog = true }
                 )
@@ -355,9 +406,42 @@ data class ActivityItem(
     val subtitle: String = ""
 )
 
+/**
+ * Maps an API [NotificationData] to the UI's [ActivityItem].
+ */
+private fun NotificationData.toActivityItem(): ActivityItem {
+    val titleUpper = title.uppercase()
+    val icon = when {
+        "FAIL" in titleUpper || "DENIED" in titleUpper -> Icons.Default.Close
+        "BLOCK" in titleUpper || "WARNING" in titleUpper -> Icons.Default.Warning
+        "SUCCESS" in titleUpper || "LOGIN" in titleUpper -> Icons.Default.CheckCircle
+        "MFA" in titleUpper || "VERIFIED" in titleUpper -> Icons.Default.Lock
+        "SESSION" in titleUpper -> Icons.Default.Refresh
+        else -> Icons.Default.Notifications
+    }
+    val isCritical = status == "unread"
+    val timeAgo = formatLastActive(timestamp)
+
+    return ActivityItem(
+        title = title,
+        device = "$details • $timeAgo",
+        isCritical = isCritical,
+        icon = icon,
+        subtitle = details
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ZtasSessionsDialog(onDismiss: () -> Unit) {
+fun ZtasSessionsDialog(
+    sessions: List<SessionData>,
+    isLoading: Boolean,
+    onDismiss: () -> Unit,
+    onForceLogoutAll: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var isLoggingOut by remember { mutableStateOf(false) }
+
     BasicAlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier
@@ -398,10 +482,29 @@ fun ZtasSessionsDialog(onDismiss: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(color = ZTasCyan.copy(alpha = 0.2f), thickness = 1.dp)
             Spacer(modifier = Modifier.height(16.dp))
-            
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SessionItem("Adam's Samsung S24", "Current Device", true)
-                SessionItem("John's iPhone", "Last active: 5 hours ago", false)
+
+            if (isLoading) {
+                CircularProgressIndicator(
+                    color = ZTasCyan,
+                    modifier = Modifier.padding(24.dp)
+                )
+            } else if (sessions.isEmpty()) {
+                Text(
+                    "No active sessions",
+                    color = TextSecondary,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(24.dp)
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    sessions.forEach { session ->
+                        SessionItem(
+                            device = session.deviceName,
+                            details = if (session.current) "Current Device" else "Last active: ${formatLastActive(session.lastActive)}",
+                            isActive = session.current
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -410,17 +513,41 @@ fun ZtasSessionsDialog(onDismiss: () -> Unit) {
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f).height(50.dp),
                     border = BorderStroke(1.dp, ZTasCyan),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !isLoggingOut
                 ) {
                     Text("CLOSE", color = ZTasCyan, fontWeight = FontWeight.Bold)
                 }
                 Button(
-                    onClick = onDismiss,
+                    onClick = {
+                        isLoggingOut = true
+                        scope.launch {
+                            try {
+                                val response = withContext(Dispatchers.IO) {
+                                    RetrofitClient.sessionApi.forceLogoutAllDevices("Bearer PLACEHOLDER_TOKEN")
+                                }
+                                if (response.isSuccessful) {
+                                    onForceLogoutAll()
+                                } else {
+                                    Log.e("HomeScreen", "Force logout failed: ${response.code()}")
+                                }
+                            } catch (e: Exception) {
+                                Log.e("HomeScreen", "Error forcing logout", e)
+                            } finally {
+                                isLoggingOut = false
+                            }
+                        }
+                    },
                     modifier = Modifier.weight(1f).height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = CriticalRed),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !isLoggingOut
                 ) {
-                    Text("LOG OUT ALL", color = Color.White, fontWeight = FontWeight.Bold)
+                    if (isLoggingOut) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text("LOG OUT ALL", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -454,6 +581,24 @@ fun SessionItem(device: String, details: String, isActive: Boolean) {
                 fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
             )
         }
+    }
+}
+
+/**
+ * Formats a timestamp (millis) into a human-readable relative time string.
+ */
+private fun formatLastActive(timestampMs: Long): String {
+    val now = System.currentTimeMillis()
+    val diffMs = now - timestampMs
+    val diffMin = diffMs / (1000 * 60)
+    val diffHour = diffMs / (1000 * 60 * 60)
+    val diffDay = diffMs / (1000 * 60 * 60 * 24)
+
+    return when {
+        diffMin < 1 -> "Just now"
+        diffMin < 60 -> "${diffMin}m ago"
+        diffHour < 24 -> "${diffHour}h ago"
+        else -> "${diffDay}d ago"
     }
 }
 

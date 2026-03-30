@@ -9,12 +9,25 @@ import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.text.style.ForegroundColorSpan
+import android.util.Log
 import android.util.Patterns
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import com.example.z_tas.network.RegisterRequest
+import com.example.z_tas.network.RetrofitClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class RegistrationPage : AppCompatActivity() {
+
+    private val userApi = RetrofitClient.userApi
+
+    companion object {
+        private const val TAG = "RegistrationPage"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,10 +60,11 @@ class RegistrationPage : AppCompatActivity() {
             if (phone.isEmpty()) { etPhone.error = "Phone number required"; return@setOnClickListener }
             if (!phone.matches(Regex("^[0-9]{10}$"))) { etPhone.error = "Enter a valid 10 digit phone number"; return@setOnClickListener }
 
-            // Navigate to OTP confirmation page
-            val intent = Intent(this, OtpInputPage::class.java)
-            startActivity(intent)
-            finish()
+            // Disable button during API call
+            registerButton.isEnabled = false
+            registerUser(name, email, nic, phone) {
+                registerButton.isEnabled = true
+            }
         }
 
         // Login link
@@ -86,5 +100,60 @@ class RegistrationPage : AppCompatActivity() {
 
         tvLoginLink.text = spannableString
         tvLoginLink.movementMethod = LinkMovementMethod.getInstance()
+    }
+
+    /**
+     * Calls POST /admin/users/register/new and on success navigates
+     * to OtpInputPage with the userId.
+     */
+    private fun registerUser(
+        name: String,
+        email: String,
+        nic: String,
+        phone: String,
+        onComplete: () -> Unit
+    ) {
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    userApi.register(RegisterRequest(name, email, nic, phone))
+                }
+
+                if (response.isSuccessful && response.body() != null) {
+                    val body = response.body()!!
+                    Log.d(TAG, "Registration success: ${body.message}, userId=${body.userId}")
+
+                    Toast.makeText(
+                        this@RegistrationPage,
+                        body.message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    // Navigate to OTP page, passing userId
+                    val intent = Intent(this@RegistrationPage, OtpInputPage::class.java).apply {
+                        putExtra("USER_ID", body.userId)
+                    }
+                    startActivity(intent)
+                    finish()
+                } else {
+                    val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                    Log.e(TAG, "Registration failed: ${response.code()} — $errorBody")
+                    Toast.makeText(
+                        this@RegistrationPage,
+                        "Registration failed: $errorBody",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Registration error", e)
+                Toast.makeText(
+                    this@RegistrationPage,
+                    "An error occurred: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                onComplete()
+            }
+        }
     }
 }
