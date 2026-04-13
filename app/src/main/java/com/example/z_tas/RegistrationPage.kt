@@ -23,6 +23,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -148,6 +149,19 @@ class RegistrationPage : AppCompatActivity() {
 
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
+                    val backendReportedFailure =
+                        body.data?.success == false ||
+                            body.status.equals("failed", ignoreCase = true) ||
+                            body.status.equals("error", ignoreCase = true)
+                    if (backendReportedFailure) {
+                        Toast.makeText(
+                            this@RegistrationPage,
+                            body.message ?: "Registration failed. Please try again.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        return@launch
+                    }
+
                     val resolvedUserId = body.userId ?: body.data?.customId.orEmpty()
                     val resolvedMessage =
                         body.message
@@ -181,7 +195,7 @@ class RegistrationPage : AppCompatActivity() {
                 } else {
                     val errorBody = response.errorBody()?.string() ?: "Unknown error"
                     val cleanMessage = sanitizeServerError(errorBody, response.code())
-                    Log.e(TAG, "Registration failed: ${response.code()} — $errorBody")
+                    Log.e(TAG, "Registration failed (HTTP ${response.code()}): $cleanMessage")
                     Toast.makeText(
                         this@RegistrationPage,
                         cleanMessage,
@@ -215,6 +229,34 @@ class RegistrationPage : AppCompatActivity() {
                 trimmed.contains("<body", ignoreCase = true) ||
                 Regex("<\\s*[a-zA-Z][^>]*>").containsMatchIn(trimmed)
         if (looksLikeHtml) return "Registration failed (HTTP $code). Please try again."
+
+        // If backend sends JSON, extract message-style fields first.
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+            runCatching {
+                val obj = JSONObject(trimmed)
+                val directMessage = obj.optString("message").trim()
+                if (directMessage.isNotEmpty()) {
+                    if (directMessage.contains("already exists", ignoreCase = true)) {
+                        return "An account with these details already exists."
+                    }
+                    return "Registration failed: $directMessage"
+                }
+
+                val status = obj.optString("status").trim()
+                val data = obj.optJSONObject("data")
+                val success = data?.optBoolean("success")
+                if (success == false) {
+                    val customId = data.optString("custom_id").trim()
+                    if (customId.isNotEmpty()) {
+                        return "Registration failed: $customId"
+                    }
+                    if (status.isNotEmpty()) {
+                        return "Registration failed: $status"
+                    }
+                    return "Registration failed. Please check details and try again."
+                }
+            }
+        }
 
         // Strip any tags if present and collapse whitespace
         val noTags = trimmed.replace(Regex("<[^>]*>"), " ")
