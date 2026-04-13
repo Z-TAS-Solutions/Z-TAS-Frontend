@@ -17,11 +17,11 @@ object RetrofitClient {
 
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
-        // More forgiving on real mobile networks
-        .connectTimeout(30, TimeUnit.SECONDS)
+        // Fail faster on unreachable servers; keep read/write reasonable.
+        .connectTimeout(12, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
-        .callTimeout(60, TimeUnit.SECONDS)
+        .callTimeout(45, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
         .build()
 

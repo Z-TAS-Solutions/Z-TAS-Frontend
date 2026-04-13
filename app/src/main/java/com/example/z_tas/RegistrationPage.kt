@@ -23,6 +23,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 class RegistrationPage : AppCompatActivity() {
 
@@ -187,11 +190,16 @@ class RegistrationPage : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Registration error", e)
-                Toast.makeText(
-                    this@RegistrationPage,
-                    "An error occurred: ${e.message}",
-                    Toast.LENGTH_LONG
-                ).show()
+                val msg = when (e) {
+                    is SocketTimeoutException ->
+                        "Can't reach server (timeout). Check Wi‑Fi/VPN and server status, then try again."
+                    is UnknownHostException ->
+                        "Can't reach server (DNS). Check internet connection and try again."
+                    is ConnectException ->
+                        "Server refused the connection. Check the API IP/port and firewall rules."
+                    else -> "An error occurred: ${e.message ?: "unknown error"}"
+                }
+                Toast.makeText(this@RegistrationPage, msg, Toast.LENGTH_LONG).show()
             } finally {
                 onComplete()
             }
