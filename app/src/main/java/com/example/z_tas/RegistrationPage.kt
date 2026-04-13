@@ -145,17 +145,33 @@ class RegistrationPage : AppCompatActivity() {
 
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
-                    Log.d(TAG, "Registration success: ${body.message}, userId=${body.userId}")
+                    val resolvedUserId = body.userId ?: body.data?.customId.orEmpty()
+                    val resolvedMessage =
+                        body.message
+                            ?: if (body.status.equals("success", ignoreCase = true)) "Registration successful." else null
+                            ?: "Registration successful."
+
+                    if (resolvedUserId.isBlank()) {
+                        Log.e(TAG, "Registration response missing user id. body=$body")
+                        Toast.makeText(
+                            this@RegistrationPage,
+                            "Registration succeeded, but the server didn't return a user id. Please try again.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        return@launch
+                    }
+
+                    Log.d(TAG, "Registration success: $resolvedMessage, userId=$resolvedUserId")
 
                     Toast.makeText(
                         this@RegistrationPage,
-                        body.message,
+                        resolvedMessage,
                         Toast.LENGTH_SHORT
                     ).show()
 
                     // Navigate to OTP page, passing userId
                     val intent = Intent(this@RegistrationPage, OtpInputPage::class.java).apply {
-                        putExtra("USER_ID", body.userId)
+                        putExtra("USER_ID", resolvedUserId)
                     }
                     startActivity(intent)
                     finish()

@@ -14,8 +14,19 @@ data class RegisterRequest(
 )
 
 data class RegisterResponse(
-    val message: String,
-    val userId: String
+    // Old/legacy shape (some backends returned this)
+    val message: String? = null,
+    val userId: String? = null,
+
+    // Current backend shape (per API response):
+    // { "data": { "success": true, "custom_id": "USR-..." }, "status": "success" }
+    val data: RegisterResponseData? = null,
+    val status: String? = null
+)
+
+data class RegisterResponseData(
+    val success: Boolean? = null,
+    @SerializedName("custom_id") val customId: String? = null
 )
 
 // ═══════════════════════════════════════════════════════════════
@@ -23,7 +34,9 @@ data class RegisterResponse(
 // ═══════════════════════════════════════════════════════════════
 
 data class VerifyOtpRequest(
+    // Send both keys for backend compatibility (common backends use either userId or custom_id)
     val userId: String,
+    @SerializedName("custom_id") val customId: String = userId,
     val otp: String
 )
 

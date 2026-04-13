@@ -125,7 +125,7 @@ class OtpInputPage : AppCompatActivity() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val response = withContext(Dispatchers.IO) {
-                    userApi.verifyOtp(VerifyOtpRequest(userId, otp))
+                    userApi.verifyOtp(VerifyOtpRequest(userId = userId, otp = otp))
                 }
 
                 if (response.isSuccessful && response.body() != null) {
