@@ -136,12 +136,20 @@ class OtpInputPage : AppCompatActivity() {
 
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
+                    val isVerified =
+                        body.verified ||
+                            body.data?.success == true ||
+                            body.status.equals("success", ignoreCase = true)
+                    val resolvedMessage =
+                        body.data?.message?.takeIf { it.isNotBlank() }
+                            ?: body.message.takeIf { it.isNotBlank() }
+                            ?: "OTP verified."
 
-                    if (body.verified) {
-                        Log.d(TAG, "OTP verified: ${body.message}")
+                    if (isVerified) {
+                        Log.d(TAG, "OTP verified: $resolvedMessage")
                         Toast.makeText(
                             this@OtpInputPage,
-                            "OTP Verified Successfully!",
+                            resolvedMessage,
                             Toast.LENGTH_SHORT
                         ).show()
 
@@ -154,7 +162,7 @@ class OtpInputPage : AppCompatActivity() {
                     } else {
                         Toast.makeText(
                             this@OtpInputPage,
-                            "OTP verification failed. Please try again.",
+                            resolvedMessage,
                             Toast.LENGTH_LONG
                         ).show()
                     }

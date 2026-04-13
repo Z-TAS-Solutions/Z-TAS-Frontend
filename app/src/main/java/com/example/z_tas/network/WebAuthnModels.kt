@@ -15,8 +15,8 @@ data class RegisterRequest(
 
 data class RegisterResponse(
     // Old/legacy shape (some backends returned this)
-    val message: String? = null,
-    val userId: String? = null,
+    @SerializedName(value = "message", alternate = ["detail"]) val message: String? = null,
+    @SerializedName(value = "user_id", alternate = ["userId", "custom_id"]) val userId: String? = null,
 
     // Current backend shape (per API response):
     // { "data": { "success": true, "custom_id": "USR-..." }, "status": "success" }
@@ -41,8 +41,15 @@ data class VerifyOtpRequest(
 )
 
 data class VerifyOtpResponse(
-    val message: String,
-    val verified: Boolean
+    @SerializedName(value = "message", alternate = ["detail"]) val message: String = "",
+    @SerializedName(value = "verified", alternate = ["success"]) val verified: Boolean = false,
+    val status: String? = null,
+    val data: VerifyOtpResponseData? = null
+)
+
+data class VerifyOtpResponseData(
+    @SerializedName(value = "success", alternate = ["verified"]) val success: Boolean = false,
+    @SerializedName(value = "message", alternate = ["detail"]) val message: String? = null
 )
 
 // ═══════════════════════════════════════════════════════════════
@@ -55,10 +62,10 @@ data class BeginLoginRequest(
 
 data class BeginLoginResponse(
     val challenge: String,
-    val rpId: String,
-    val allowCredentials: List<AllowCredential>,
+    @SerializedName(value = "rp_id", alternate = ["rpId"]) val rpId: String,
+    @SerializedName(value = "allow_credentials", alternate = ["allowCredentials"]) val allowCredentials: List<AllowCredential>,
     val timeout: Long,
-    val userVerification: String
+    @SerializedName(value = "user_verification", alternate = ["userVerification"]) val userVerification: String
 )
 
 data class AllowCredential(
@@ -82,7 +89,7 @@ data class AssertionResponseBody(
 
 data class FinishLoginResponse(
     val token: String,
-    val userId: String,
+    @SerializedName(value = "user_id", alternate = ["userId"]) val userId: String,
     val role: String
 )
 
@@ -91,14 +98,14 @@ data class FinishLoginResponse(
 // ═══════════════════════════════════════════════════════════════
 
 data class BeginRegisterRequest(
-    val userId: String
+    @SerializedName(value = "user_id", alternate = ["userId", "custom_id"]) val userId: String
 )
 
 data class BeginRegisterResponse(
     val challenge: String,
     val rp: RelyingParty,
     val user: WebAuthnUser,
-    val pubKeyCredParams: List<PubKeyCredParam>,
+    @SerializedName(value = "pub_key_cred_params", alternate = ["pubKeyCredParams"]) val pubKeyCredParams: List<PubKeyCredParam>,
     val timeout: Long,
     val attestation: String
 )
@@ -111,7 +118,7 @@ data class RelyingParty(
 data class WebAuthnUser(
     val id: String,
     val name: String,
-    val displayName: String
+    @SerializedName(value = "display_name", alternate = ["displayName"]) val displayName: String
 )
 
 data class PubKeyCredParam(
@@ -132,8 +139,8 @@ data class AttestationResponseBody(
 )
 
 data class FinishRegisterResponse(
-    val message: String,
-    val credentialId: String
+    @SerializedName(value = "message", alternate = ["detail"]) val message: String,
+    @SerializedName(value = "credential_id", alternate = ["credentialId"]) val credentialId: String
 )
 
 // ═══════════════════════════════════════════════════════════════
@@ -204,14 +211,14 @@ data class MarkAllReadData(
 // ═══════════════════════════════════════════════════════════════
 
 data class UserProfileResponse(
-    val userId: String,
+    @SerializedName(value = "user_id", alternate = ["userId"]) val userId: String,
     val name: String,
     val email: String,
     val phone: String,
     val status: String,
-    val activeDevices: Int,
-    val securityLevel: String,
-    val lastLogin: Long
+    @SerializedName(value = "active_devices", alternate = ["activeDevices"]) val activeDevices: Int,
+    @SerializedName(value = "security_level", alternate = ["securityLevel"]) val securityLevel: String,
+    @SerializedName(value = "last_login", alternate = ["lastLogin"]) val lastLogin: Long
 )
 
 // ═══════════════════════════════════════════════════════════════
