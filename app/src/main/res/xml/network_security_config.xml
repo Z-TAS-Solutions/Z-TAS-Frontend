@@ -4,6 +4,9 @@
       Prefer switching the API to HTTPS. This is a compatibility fallback
       for the current HTTP base URL used by RetrofitClient.
     -->
+    <!-- Allow cleartext globally for dev environments -->
+    <base-config cleartextTrafficPermitted="true" />
+
     <domain-config cleartextTrafficPermitted="true">
         <!-- IP-based domain entry for http://104.43.91.57:8000 -->
         <domain includeSubdomains="false">104.43.91.57</domain>

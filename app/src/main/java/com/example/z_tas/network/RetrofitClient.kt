@@ -1,5 +1,6 @@
 package com.example.z_tas.network
 
+import android.util.Log
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -8,8 +9,9 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
+    private const val TAG = "RetrofitClient"
 
-    private const val BASE_URL = "http://104.43.91.57:8000/api/v1/"
+    private const val BASE_URL = "http://172.188.97.210/api/v1/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -30,6 +32,7 @@ object RetrofitClient {
         .client(httpClient)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
+        .also { Log.i(TAG, "Using BASE_URL=$BASE_URL") }
 
     val userApi: UserApi = retrofit.create(UserApi::class.java)
     val webAuthnApi: WebAuthnApi = retrofit.create(WebAuthnApi::class.java)
