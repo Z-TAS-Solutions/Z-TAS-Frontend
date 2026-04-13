@@ -14,6 +14,9 @@ import android.util.Patterns
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.example.z_tas.network.RegisterRequest
 import com.example.z_tas.network.RetrofitClient
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +35,16 @@ class RegistrationPage : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_registration_page)
+
+        // Ensure content scrolls above the keyboard (works reliably across devices)
+        val registrationScroll = findViewById<ScrollView>(R.id.registrationScroll)
+        val baseBottomPadding = registrationScroll.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(registrationScroll) { v, insets ->
+            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            val navBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            v.updatePadding(bottom = baseBottomPadding + maxOf(imeBottom, navBottom))
+            insets
+        }
 
         // All input fields
         val etName = findViewById<EditText>(R.id.etName)
