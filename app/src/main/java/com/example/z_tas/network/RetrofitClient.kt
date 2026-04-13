@@ -11,7 +11,7 @@ object RetrofitClient {
 
     private const val TAG = "RetrofitClient"
 
-    private const val BASE_URL = "http://172.188.97.210/api/v1/"
+    private const val BASE_URL = "http://172.188.97.210:8000/api/v1/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
