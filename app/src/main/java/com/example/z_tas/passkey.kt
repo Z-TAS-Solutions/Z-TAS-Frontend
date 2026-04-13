@@ -128,9 +128,8 @@ class PasskeyActivity : AppCompatActivity() {
                     type = registrationJson.optString("type", "public-key")
                 )
 
-                // TODO: Replace placeholder token with real token from login/registration flow
                 val finishResponse = withContext(Dispatchers.IO) {
-                    webAuthnApi.finishRegister("Bearer PLACEHOLDER_TOKEN", finishRequest)
+                    webAuthnApi.finishRegister(finishRequest)
                 }
 
                 if (!finishResponse.isSuccessful || finishResponse.body() == null) {

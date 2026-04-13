@@ -2,7 +2,6 @@ package com.example.z_tas.network
 
 import retrofit2.Response
 import retrofit2.http.Body
-import retrofit2.http.Header
 import retrofit2.http.POST
 
 interface WebAuthnApi {
@@ -20,7 +19,6 @@ interface WebAuthnApi {
 
     @POST("webauthn/register/finish")
     suspend fun finishRegister(
-        @Header("Authorization") token: String,
         @Body request: FinishRegisterRequest
     ): Response<FinishRegisterResponse>
 }

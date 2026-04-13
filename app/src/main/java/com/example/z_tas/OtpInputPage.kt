@@ -10,6 +10,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.core.widget.addTextChangedListener
 import com.example.z_tas.network.RetrofitClient
 import com.example.z_tas.network.VerifyOtpRequest
@@ -22,6 +23,7 @@ class OtpInputPage : AppCompatActivity() {
 
     private val userApi = RetrofitClient.userApi
     private var userId: String = ""
+    private var isVerifying = false
 
     companion object {
         private const val TAG = "OtpInputPage"
@@ -70,10 +72,17 @@ class OtpInputPage : AppCompatActivity() {
         }
 
         btnBack.setOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
+            navigateBackToRegistration()
         }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                navigateBackToRegistration()
+            }
+        })
 
         btnContinue.setOnClickListener {
+            if (isVerifying) return@setOnClickListener
+
             val otp = etOtpPassword.text.toString().trim()
             val confirmOtp = etOtpConfirm.text.toString().trim()
 
@@ -92,8 +101,10 @@ class OtpInputPage : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            isVerifying = true
             btnContinue.isEnabled = false
             verifyOtp(otp) {
+                isVerifying = false
                 btnContinue.isEnabled = true
             }
         }
@@ -110,9 +121,12 @@ class OtpInputPage : AppCompatActivity() {
         if (otp.length != expectedLen || confirmOtp.length != expectedLen) return
         if (otp != confirmOtp) return
         if (!btnContinue.isEnabled) return
+        if (isVerifying) return
 
+        isVerifying = true
         btnContinue.isEnabled = false
         verifyOtp(otp) {
+            isVerifying = false
             btnContinue.isEnabled = true
         }
     }
@@ -144,12 +158,18 @@ class OtpInputPage : AppCompatActivity() {
                         body.data?.message?.takeIf { it.isNotBlank() }
                             ?: body.message.takeIf { it.isNotBlank() }
                             ?: "OTP verified."
+                    val uiMessage =
+                        if (resolvedMessage.contains("already verified", ignoreCase = true)) {
+                            "OTP verified successfully."
+                        } else {
+                            resolvedMessage
+                        }
 
                     if (isVerified) {
                         Log.d(TAG, "OTP verified: $resolvedMessage")
                         Toast.makeText(
                             this@OtpInputPage,
-                            resolvedMessage,
+                            uiMessage,
                             Toast.LENGTH_SHORT
                         ).show()
 
@@ -193,6 +213,13 @@ class OtpInputPage : AppCompatActivity() {
         val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager ?: return
         imm.hideSoftInputFromWindow(view.windowToken, 0)
         view.clearFocus()
+    }
+
+    private fun navigateBackToRegistration() {
+        startActivity(Intent(this, RegistrationPage::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        })
+        finish()
     }
 
     private fun sanitizeServerError(raw: String, code: Int): String {
