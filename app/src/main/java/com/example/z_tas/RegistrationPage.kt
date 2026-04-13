@@ -60,10 +60,21 @@ class RegistrationPage : AppCompatActivity() {
             if (phone.isEmpty()) { etPhone.error = "Phone number required"; return@setOnClickListener }
             if (!phone.matches(Regex("^[0-9]{10}$"))) { etPhone.error = "Enter a valid 10 digit phone number"; return@setOnClickListener }
 
-            // Disable button during API call
+            // Disable inputs during API call (prevents "unresponsive" feel)
+            val originalButtonText = registerButton.text
             registerButton.isEnabled = false
+            registerButton.text = "REGISTERING…"
+            etName.isEnabled = false
+            etEmail.isEnabled = false
+            etNIC.isEnabled = false
+            etPhone.isEnabled = false
             registerUser(name, email, nic, phone) {
                 registerButton.isEnabled = true
+                registerButton.text = originalButtonText
+                etName.isEnabled = true
+                etEmail.isEnabled = true
+                etNIC.isEnabled = true
+                etPhone.isEnabled = true
             }
         }
 
@@ -137,10 +148,11 @@ class RegistrationPage : AppCompatActivity() {
                     finish()
                 } else {
                     val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                    val cleanMessage = sanitizeServerError(errorBody, response.code())
                     Log.e(TAG, "Registration failed: ${response.code()} — $errorBody")
                     Toast.makeText(
                         this@RegistrationPage,
-                        "Registration failed: $errorBody",
+                        cleanMessage,
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -155,5 +167,20 @@ class RegistrationPage : AppCompatActivity() {
                 onComplete()
             }
         }
+    }
+
+    private fun sanitizeServerError(raw: String, code: Int): String {
+        val trimmed = raw.trim()
+        if (trimmed.isEmpty()) return "Registration failed (HTTP $code). Please try again."
+        val looksLikeHtml = trimmed.startsWith("<!doctype", ignoreCase = true) ||
+            trimmed.startsWith("<html", ignoreCase = true) ||
+            trimmed.contains("<body", ignoreCase = true)
+        if (looksLikeHtml) return "Registration failed (HTTP $code). Please try again."
+
+        // Strip any tags if present and collapse whitespace
+        val noTags = trimmed.replace(Regex("<[^>]*>"), " ")
+        val clean = noTags.replace(Regex("\\s+"), " ").trim()
+        val limited = if (clean.length > 180) clean.take(180) + "…" else clean
+        return "Registration failed: $limited"
     }
 }

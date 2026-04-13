@@ -79,27 +79,24 @@
                 android:id="@+id/etName"
                 style="@style/CyberInputStyle"
                 android:hint="Full Name"
-                android:textAllCaps="true" />
+                android:inputType="textPersonName" />
 
             <EditText
                 android:id="@+id/etEmail"
                 style="@style/CyberInputStyle"
                 android:hint="E-mail"
-                android:inputType="textEmailAddress"
-                android:textAllCaps="true" />
+                android:inputType="textEmailAddress" />
 
             <EditText
                 android:id="@+id/etNIC"
                 style="@style/CyberInputStyle"
-                android:hint="NIC Number"
-                android:textAllCaps="true" />
+                android:hint="NIC Number" />
 
             <EditText
                 android:id="@+id/etPhone"
                 style="@style/CyberInputStyle"
                 android:hint="Phone Number"
-                android:inputType="phone"
-                android:textAllCaps="true" />
+                android:inputType="phone" />
 
             <Button
                 android:id="@+id/btnRegister"

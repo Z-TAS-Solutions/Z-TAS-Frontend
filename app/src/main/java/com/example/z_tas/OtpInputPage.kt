@@ -3,11 +3,14 @@ package com.example.z_tas
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
 import com.example.z_tas.network.RetrofitClient
 import com.example.z_tas.network.VerifyOtpRequest
 import kotlinx.coroutines.CoroutineScope
@@ -38,6 +41,31 @@ class OtpInputPage : AppCompatActivity() {
         val etOtpPassword = findViewById<EditText>(R.id.etOtpPassword)
         val etOtpConfirm = findViewById<EditText>(R.id.etOtpConfirm)
         val btnBack = findViewById<ImageButton>(R.id.btnBackVerify)
+
+        // Auto-advance to confirm once all digits are entered
+        val expectedLen = 6
+        etOtpPassword.addTextChangedListener { editable ->
+            val value = editable?.toString().orEmpty().trim()
+            if (value.length == expectedLen) {
+                etOtpConfirm.requestFocus()
+                etOtpConfirm.setSelection(etOtpConfirm.text?.length ?: 0)
+            }
+        }
+
+        // On confirm completion, close keyboard (and makes screen feel responsive)
+        etOtpConfirm.imeOptions = EditorInfo.IME_ACTION_DONE
+        etOtpConfirm.setOnEditorActionListener { v, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                hideKeyboard(v)
+                true
+            } else false
+        }
+        etOtpConfirm.addTextChangedListener { editable ->
+            val value = editable?.toString().orEmpty().trim()
+            if (value.length == expectedLen) {
+                hideKeyboard(etOtpConfirm)
+            }
+        }
 
         btnBack.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
@@ -106,10 +134,11 @@ class OtpInputPage : AppCompatActivity() {
                     }
                 } else {
                     val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                    val cleanMessage = sanitizeServerError(errorBody, response.code())
                     Log.e(TAG, "OTP verification failed: ${response.code()} — $errorBody")
                     Toast.makeText(
                         this@OtpInputPage,
-                        "Verification failed: $errorBody",
+                        cleanMessage,
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -124,5 +153,25 @@ class OtpInputPage : AppCompatActivity() {
                 onComplete()
             }
         }
+    }
+
+    private fun hideKeyboard(view: android.view.View) {
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager ?: return
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
+        view.clearFocus()
+    }
+
+    private fun sanitizeServerError(raw: String, code: Int): String {
+        val trimmed = raw.trim()
+        if (trimmed.isEmpty()) return "Verification failed (HTTP $code). Please try again."
+        val looksLikeHtml = trimmed.startsWith("<!doctype", ignoreCase = true) ||
+            trimmed.startsWith("<html", ignoreCase = true) ||
+            trimmed.contains("<body", ignoreCase = true)
+        if (looksLikeHtml) return "Verification failed (HTTP $code). Please try again."
+
+        val noTags = trimmed.replace(Regex("<[^>]*>"), " ")
+        val clean = noTags.replace(Regex("\\s+"), " ").trim()
+        val limited = if (clean.length > 180) clean.take(180) + "…" else clean
+        return "Verification failed: $limited"
     }
 }
