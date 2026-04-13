@@ -190,6 +190,7 @@ class RegistrationPage : AppCompatActivity() {
                     // Navigate to OTP page, passing userId
                     val intent = Intent(this@RegistrationPage, OtpInputPage::class.java).apply {
                         putExtra("USER_ID", resolvedUserId)
+                        putExtra("USER_EMAIL", email)
                     }
                     startActivity(intent)
                     finish()

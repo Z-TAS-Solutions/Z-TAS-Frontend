@@ -23,6 +23,7 @@ class OtpInputPage : AppCompatActivity() {
 
     private val userApi = RetrofitClient.userApi
     private var userId: String = ""
+    private var userEmail: String = ""
     private var isVerifying = false
 
     companion object {
@@ -35,6 +36,7 @@ class OtpInputPage : AppCompatActivity() {
 
         // Receive userId from RegistrationPage
         userId = intent.getStringExtra("USER_ID") ?: ""
+        userEmail = intent.getStringExtra("USER_EMAIL") ?: ""
         if (userId.isEmpty()) {
             Log.w(TAG, "No USER_ID received — OTP verification will fail")
         }
@@ -176,6 +178,7 @@ class OtpInputPage : AppCompatActivity() {
                         // Navigate to Passkey activation, passing userId
                         val intent = Intent(this@OtpInputPage, PasskeyActivity::class.java).apply {
                             putExtra("USER_ID", userId)
+                            putExtra("USER_EMAIL", userEmail)
                         }
                         startActivity(intent)
                         finish()
@@ -220,6 +223,11 @@ class OtpInputPage : AppCompatActivity() {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         })
         finish()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        navigateBackToRegistration()
     }
 
     private fun sanitizeServerError(raw: String, code: Int): String {

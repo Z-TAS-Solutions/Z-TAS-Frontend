@@ -27,6 +27,7 @@ class PasskeyActivity : AppCompatActivity() {
     private lateinit var credentialManager: CredentialManager
     private val webAuthnApi = RetrofitClient.webAuthnApi
     private var userId: String = ""
+    private var userEmail: String = ""
 
     companion object {
         private const val TAG = "PasskeyActivity"
@@ -38,10 +39,14 @@ class PasskeyActivity : AppCompatActivity() {
 
         credentialManager = CredentialManager.create(this)
 
-        // Receive userId from OtpInputPage
+        // Receive user details from OtpInputPage
         userId = intent.getStringExtra("USER_ID") ?: ""
+        userEmail = intent.getStringExtra("USER_EMAIL") ?: ""
         if (userId.isEmpty()) {
             Log.w(TAG, "No USER_ID received — passkey registration will fail")
+        }
+        if (userEmail.isEmpty()) {
+            Log.w(TAG, "No USER_EMAIL received — begin register may fail")
         }
 
         // Point 1
@@ -85,7 +90,13 @@ class PasskeyActivity : AppCompatActivity() {
             try {
                 // ── Step 1: Begin Registration ───────────────────────
                 val beginResponse = withContext(Dispatchers.IO) {
-                    webAuthnApi.beginRegister(BeginRegisterRequest(userId))
+                    webAuthnApi.beginRegister(
+                        BeginRegisterRequest(
+                            customId = userId,
+                            userId = userId,
+                            email = userEmail
+                        )
+                    )
                 }
 
                 if (!beginResponse.isSuccessful || beginResponse.body() == null) {

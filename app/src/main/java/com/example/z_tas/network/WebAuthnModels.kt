@@ -98,7 +98,9 @@ data class FinishLoginResponse(
 // ═══════════════════════════════════════════════════════════════
 
 data class BeginRegisterRequest(
-    @SerializedName(value = "user_id", alternate = ["userId", "custom_id"]) val userId: String
+    @SerializedName("custom_id") val customId: String,
+    @SerializedName("user_id") val userId: String? = null,
+    val email: String
 )
 
 data class BeginRegisterResponse(
