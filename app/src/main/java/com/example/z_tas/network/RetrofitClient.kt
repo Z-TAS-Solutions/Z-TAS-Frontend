@@ -7,7 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    // TODO: Replace with your actual backend URL
+
     private const val BASE_URL = "http://104.43.91.57:8000/api/v1/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
