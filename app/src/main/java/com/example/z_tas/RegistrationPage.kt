@@ -172,9 +172,11 @@ class RegistrationPage : AppCompatActivity() {
     private fun sanitizeServerError(raw: String, code: Int): String {
         val trimmed = raw.trim()
         if (trimmed.isEmpty()) return "Registration failed (HTTP $code). Please try again."
-        val looksLikeHtml = trimmed.startsWith("<!doctype", ignoreCase = true) ||
-            trimmed.startsWith("<html", ignoreCase = true) ||
-            trimmed.contains("<body", ignoreCase = true)
+        val looksLikeHtml =
+            trimmed.startsWith("<!doctype", ignoreCase = true) ||
+                trimmed.startsWith("<html", ignoreCase = true) ||
+                trimmed.contains("<body", ignoreCase = true) ||
+                Regex("<\\s*[a-zA-Z][^>]*>").containsMatchIn(trimmed)
         if (looksLikeHtml) return "Registration failed (HTTP $code). Please try again."
 
         // Strip any tags if present and collapse whitespace

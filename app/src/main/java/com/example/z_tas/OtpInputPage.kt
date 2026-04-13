@@ -57,6 +57,7 @@ class OtpInputPage : AppCompatActivity() {
         etOtpConfirm.setOnEditorActionListener { v, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 hideKeyboard(v)
+                maybeAutoSubmit(etOtpPassword, etOtpConfirm, btnContinue, expectedLen)
                 true
             } else false
         }
@@ -64,6 +65,7 @@ class OtpInputPage : AppCompatActivity() {
             val value = editable?.toString().orEmpty().trim()
             if (value.length == expectedLen) {
                 hideKeyboard(etOtpConfirm)
+                maybeAutoSubmit(etOtpPassword, etOtpConfirm, btnContinue, expectedLen)
             }
         }
 
@@ -94,6 +96,24 @@ class OtpInputPage : AppCompatActivity() {
             verifyOtp(otp) {
                 btnContinue.isEnabled = true
             }
+        }
+    }
+
+    private fun maybeAutoSubmit(
+        etOtpPassword: EditText,
+        etOtpConfirm: EditText,
+        btnContinue: Button,
+        expectedLen: Int
+    ) {
+        val otp = etOtpPassword.text?.toString().orEmpty().trim()
+        val confirmOtp = etOtpConfirm.text?.toString().orEmpty().trim()
+        if (otp.length != expectedLen || confirmOtp.length != expectedLen) return
+        if (otp != confirmOtp) return
+        if (!btnContinue.isEnabled) return
+
+        btnContinue.isEnabled = false
+        verifyOtp(otp) {
+            btnContinue.isEnabled = true
         }
     }
 
@@ -164,9 +184,11 @@ class OtpInputPage : AppCompatActivity() {
     private fun sanitizeServerError(raw: String, code: Int): String {
         val trimmed = raw.trim()
         if (trimmed.isEmpty()) return "Verification failed (HTTP $code). Please try again."
-        val looksLikeHtml = trimmed.startsWith("<!doctype", ignoreCase = true) ||
-            trimmed.startsWith("<html", ignoreCase = true) ||
-            trimmed.contains("<body", ignoreCase = true)
+        val looksLikeHtml =
+            trimmed.startsWith("<!doctype", ignoreCase = true) ||
+                trimmed.startsWith("<html", ignoreCase = true) ||
+                trimmed.contains("<body", ignoreCase = true) ||
+                Regex("<\\s*[a-zA-Z][^>]*>").containsMatchIn(trimmed)
         if (looksLikeHtml) return "Verification failed (HTTP $code). Please try again."
 
         val noTags = trimmed.replace(Regex("<[^>]*>"), " ")
