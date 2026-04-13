@@ -104,12 +104,44 @@ data class BeginRegisterRequest(
 )
 
 data class BeginRegisterResponse(
-    val challenge: String,
-    val rp: RelyingParty,
-    val user: WebAuthnUser,
-    @SerializedName(value = "pub_key_cred_params", alternate = ["pubKeyCredParams"]) val pubKeyCredParams: List<PubKeyCredParam>,
-    val timeout: Long,
-    val attestation: String
+    // Flat shape support
+    val challenge: String? = null,
+    val rp: RelyingParty? = null,
+    val user: WebAuthnUser? = null,
+    @SerializedName(value = "pub_key_cred_params", alternate = ["pubKeyCredParams"]) val pubKeyCredParams: List<PubKeyCredParam>? = null,
+    val timeout: Long? = null,
+    val attestation: String? = null,
+
+    // Wrapped shape support:
+    // { "data": { "creation_data": { "publicKey": { ... } } }, "status": "success" }
+    val data: BeginRegisterResponseData? = null,
+    val status: String? = null
+)
+
+data class BeginRegisterResponseData(
+    @SerializedName("session_token") val sessionToken: String? = null,
+    @SerializedName("creation_data") val creationData: BeginRegisterCreationData? = null
+)
+
+data class BeginRegisterCreationData(
+    @SerializedName("publicKey") val publicKey: BeginRegisterPublicKeyOptions? = null
+)
+
+data class BeginRegisterPublicKeyOptions(
+    val challenge: String? = null,
+    val rp: RelyingParty? = null,
+    val user: WebAuthnUser? = null,
+    @SerializedName(value = "pub_key_cred_params", alternate = ["pubKeyCredParams"]) val pubKeyCredParams: List<PubKeyCredParam>? = null,
+    val timeout: Long? = null,
+    val attestation: String? = null,
+    @SerializedName(value = "authenticator_selection", alternate = ["authenticatorSelection"]) val authenticatorSelection: AuthenticatorSelection? = null,
+    val hints: List<String>? = null
+)
+
+data class AuthenticatorSelection(
+    @SerializedName(value = "require_resident_key", alternate = ["requireResidentKey"]) val requireResidentKey: Boolean? = null,
+    @SerializedName(value = "resident_key", alternate = ["residentKey"]) val residentKey: String? = null,
+    @SerializedName(value = "user_verification", alternate = ["userVerification"]) val userVerification: String? = null
 )
 
 data class RelyingParty(

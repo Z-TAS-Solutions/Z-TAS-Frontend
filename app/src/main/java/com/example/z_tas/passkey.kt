@@ -11,6 +11,7 @@ import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.PublicKeyCredential
 import androidx.credentials.exceptions.CreateCredentialException
+import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
 import com.example.z_tas.network.AttestationResponseBody
 import com.example.z_tas.network.BeginRegisterRequest
 import com.example.z_tas.network.FinishRegisterRequest
@@ -108,6 +109,16 @@ class PasskeyActivity : AppCompatActivity() {
                 }
 
                 val beginBody = beginResponse.body()!!
+                val sessionToken = beginBody.data?.sessionToken.orEmpty()
+                if (sessionToken.isBlank()) {
+                    Toast.makeText(
+                        this@PasskeyActivity,
+                        "Passkey setup failed: missing session token from server.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    onComplete()
+                    return@launch
+                }
                 val requestJson = buildCreateCredentialJson(beginBody)
                 Log.d(TAG, "CredentialManager create request JSON: $requestJson")
 
@@ -140,7 +151,7 @@ class PasskeyActivity : AppCompatActivity() {
                 )
 
                 val finishResponse = withContext(Dispatchers.IO) {
-                    webAuthnApi.finishRegister(finishRequest)
+                    webAuthnApi.finishRegister(sessionToken, finishRequest)
                 }
 
                 if (!finishResponse.isSuccessful || finishResponse.body() == null) {
@@ -160,6 +171,14 @@ class PasskeyActivity : AppCompatActivity() {
                 })
                 finish()
 
+            } catch (e: CreatePublicKeyCredentialDomException) {
+                Log.e(TAG, "Credential creation DOM error", e)
+                val msg = if (e.message?.contains("RP ID cannot be validated", ignoreCase = true) == true) {
+                    "Passkey setup failed: RP ID is invalid for this app. Ask backend to use your verified domain (not localhost/IP) and configure Digital Asset Links."
+                } else {
+                    "Passkey creation failed: ${e.message}"
+                }
+                Toast.makeText(this@PasskeyActivity, msg, Toast.LENGTH_LONG).show()
             } catch (e: CreateCredentialException) {
                 Log.e(TAG, "Credential creation failed", e)
                 Toast.makeText(
@@ -187,33 +206,71 @@ class PasskeyActivity : AppCompatActivity() {
     private fun buildCreateCredentialJson(
         begin: com.example.z_tas.network.BeginRegisterResponse
     ): String {
+        val options = begin.data?.creationData?.publicKey
+            ?: com.example.z_tas.network.BeginRegisterPublicKeyOptions(
+                challenge = begin.challenge,
+                rp = begin.rp,
+                user = begin.user,
+                pubKeyCredParams = begin.pubKeyCredParams,
+                timeout = begin.timeout,
+                attestation = begin.attestation
+            )
+
+        val challenge = options.challenge
+        val rp = options.rp
+        val user = options.user
+        val pubKeyCredParams = options.pubKeyCredParams
+        val timeout = options.timeout
+        val attestation = options.attestation
+
+        if (challenge.isNullOrBlank() || rp == null || user == null || pubKeyCredParams.isNullOrEmpty()) {
+            throw IllegalStateException("Passkey begin response missing required publicKey fields")
+        }
+
         val json = JSONObject()
-        json.put("challenge", begin.challenge)
-        json.put("timeout", begin.timeout)
-        json.put("attestation", begin.attestation)
+        json.put("challenge", challenge)
+        json.put("timeout", timeout ?: 300000L)
+        json.put("attestation", attestation ?: "none")
 
         // rp
         val rpJson = JSONObject()
-        rpJson.put("id", begin.rp.id)
-        rpJson.put("name", begin.rp.name)
+        rpJson.put("id", rp.id)
+        rpJson.put("name", rp.name)
         json.put("rp", rpJson)
 
         // user
         val userJson = JSONObject()
-        userJson.put("id", begin.user.id)
-        userJson.put("name", begin.user.name)
-        userJson.put("displayName", begin.user.displayName)
+        userJson.put("id", user.id)
+        userJson.put("name", user.name)
+        userJson.put("displayName", user.displayName)
         json.put("user", userJson)
 
         // pubKeyCredParams
         val paramsArray = JSONArray()
-        for (param in begin.pubKeyCredParams) {
+        for (param in pubKeyCredParams) {
             val paramObj = JSONObject()
             paramObj.put("type", param.type)
             paramObj.put("alg", param.alg)
             paramsArray.put(paramObj)
         }
         json.put("pubKeyCredParams", paramsArray)
+
+        options.authenticatorSelection?.let { selection ->
+            val selectionJson = JSONObject()
+            selection.requireResidentKey?.let { selectionJson.put("requireResidentKey", it) }
+            selection.residentKey?.let { selectionJson.put("residentKey", it) }
+            selection.userVerification?.let { selectionJson.put("userVerification", it) }
+            if (selectionJson.length() > 0) {
+                json.put("authenticatorSelection", selectionJson)
+            }
+        }
+        options.hints?.let { hints ->
+            if (hints.isNotEmpty()) {
+                val hintsArray = JSONArray()
+                hints.forEach { hintsArray.put(it) }
+                json.put("hints", hintsArray)
+            }
+        }
 
         return json.toString()
     }
