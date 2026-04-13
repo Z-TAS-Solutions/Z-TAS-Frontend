@@ -34,9 +34,9 @@ data class RegisterResponseData(
 // ═══════════════════════════════════════════════════════════════
 
 data class VerifyOtpRequest(
-    // Send both keys for backend compatibility (common backends use either userId or custom_id)
-    val userId: String,
-    @SerializedName("custom_id") val customId: String = userId,
+    // Use backend-friendly snake_case keys (and keep both id keys for compatibility)
+    @SerializedName("custom_id") val customId: String,
+    @SerializedName("user_id") val userId: String? = null,
     val otp: String
 )
 

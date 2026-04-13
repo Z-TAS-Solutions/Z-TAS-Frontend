@@ -23,6 +23,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.ConnectException
 import java.net.SocketTimeoutException
@@ -235,15 +236,18 @@ class RegistrationPage : AppCompatActivity() {
             runCatching {
                 val obj = JSONObject(trimmed)
                 val directMessage = obj.optString("message").trim()
+                val data = obj.optJSONObject("data")
+                val duplicateFields = extractDuplicateFields(directMessage, data)
+                if (duplicateFields.isNotEmpty()) {
+                    val pretty = duplicateFields.joinToString(", ") { it.uppercase() }
+                    return "$pretty is already registered. Please use different details."
+                }
+
                 if (directMessage.isNotEmpty()) {
-                    if (directMessage.contains("already exists", ignoreCase = true)) {
-                        return "An account with these details already exists."
-                    }
                     return "Registration failed: $directMessage"
                 }
 
                 val status = obj.optString("status").trim()
-                val data = obj.optJSONObject("data")
                 val success = data?.optBoolean("success")
                 if (success == false) {
                     val customId = data.optString("custom_id").trim()
@@ -252,6 +256,9 @@ class RegistrationPage : AppCompatActivity() {
                     }
                     if (status.isNotEmpty()) {
                         return "Registration failed: $status"
+                    }
+                    if (code == 409) {
+                        return "Email, NIC, or phone is already registered. Please use different details."
                     }
                     return "Registration failed. Please check details and try again."
                 }
@@ -263,5 +270,41 @@ class RegistrationPage : AppCompatActivity() {
         val clean = noTags.replace(Regex("\\s+"), " ").trim()
         val limited = if (clean.length > 180) clean.take(180) + "…" else clean
         return "Registration failed: $limited"
+    }
+
+    private fun extractDuplicateFields(message: String, data: JSONObject?): List<String> {
+        val found = linkedSetOf<String>()
+
+        fun addIfKnown(value: String?) {
+            val normalized = value?.trim()?.lowercase().orEmpty()
+            when (normalized) {
+                "email" -> found.add("Email")
+                "nic" -> found.add("NIC")
+                "phone", "phone_number", "mobile" -> found.add("Phone")
+            }
+        }
+
+        val lowerMessage = message.lowercase()
+        if ("email" in lowerMessage) found.add("Email")
+        if ("nic" in lowerMessage) found.add("NIC")
+        if ("phone" in lowerMessage || "mobile" in lowerMessage) found.add("Phone")
+
+        if (data != null) {
+            addIfKnown(data.optString("duplicate_field"))
+            addIfKnown(data.optString("conflict_field"))
+
+            val duplicateFieldsArray = data.optJSONArray("duplicate_fields")
+            if (duplicateFieldsArray != null) {
+                for (i in 0 until duplicateFieldsArray.length()) {
+                    addIfKnown(duplicateFieldsArray.optString(i))
+                }
+            }
+
+            if (data.optBoolean("email_exists", false)) found.add("Email")
+            if (data.optBoolean("nic_exists", false)) found.add("NIC")
+            if (data.optBoolean("phone_exists", false)) found.add("Phone")
+        }
+
+        return found.toList()
     }
 }

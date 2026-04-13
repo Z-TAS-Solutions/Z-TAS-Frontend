@@ -125,7 +125,13 @@ class OtpInputPage : AppCompatActivity() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val response = withContext(Dispatchers.IO) {
-                    userApi.verifyOtp(VerifyOtpRequest(userId = userId, otp = otp))
+                    userApi.verifyOtp(
+                        VerifyOtpRequest(
+                            customId = userId,
+                            userId = userId,
+                            otp = otp
+                        )
+                    )
                 }
 
                 if (response.isSuccessful && response.body() != null) {
@@ -190,6 +196,20 @@ class OtpInputPage : AppCompatActivity() {
                 trimmed.contains("<body", ignoreCase = true) ||
                 Regex("<\\s*[a-zA-Z][^>]*>").containsMatchIn(trimmed)
         if (looksLikeHtml) return "Verification failed (HTTP $code). Please try again."
+
+        // Handle backend JSON errors like:
+        // {"message":"registration info not found or expired","status":"error"}
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+            runCatching {
+                val msg = org.json.JSONObject(trimmed).optString("message").trim()
+                if (msg.isNotEmpty()) {
+                    if (msg.contains("not found or expired", ignoreCase = true)) {
+                        return "OTP session expired. Please register again to get a new OTP."
+                    }
+                    return "Verification failed: $msg"
+                }
+            }
+        }
 
         val noTags = trimmed.replace(Regex("<[^>]*>"), " ")
         val clean = noTags.replace(Regex("\\s+"), " ").trim()
