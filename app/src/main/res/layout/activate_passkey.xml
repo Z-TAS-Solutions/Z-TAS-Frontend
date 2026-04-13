@@ -71,11 +71,28 @@
                     android:background="@drawable/circle_glow_bg"
                     android:alpha="0.14" />
                 <ImageView
+                    android:id="@+id/ivFingerprintHidden"
+                    android:layout_width="1dp"
+                    android:layout_height="1dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/fingerprint"
+                    android:visibility="gone" />
+
+                <androidx.cardview.widget.CardView
                     android:layout_width="70dp"
                     android:layout_height="70dp"
                     android:layout_gravity="center"
-                    android:src="@drawable/ic_fingerprint_clean"
-                    app:tint="#00E5FF" />
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardCornerRadius="35dp"
+                    app:cardElevation="0dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="Fingerprint icon"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/fingerprint" />
+                </androidx.cardview.widget.CardView>
             </FrameLayout>
 
             <LinearLayout
@@ -98,7 +115,7 @@
         android:layout_width="match_parent"
         android:layout_height="55dp"
         android:layout_marginTop="10dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="44dp"
         android:text="ACTIVATE PASSKEY"
         android:background="@drawable/neon_button_bg"
         android:textColor="#0B0E11"
