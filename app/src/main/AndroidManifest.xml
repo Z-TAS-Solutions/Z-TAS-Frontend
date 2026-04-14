@@ -33,7 +33,7 @@
             android:exported="false" />
 
         <activity
-            android:name="com.example.z_tas.SplashActivity"
+            android:name="com.ztas.app.SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -41,16 +41,16 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="com.example.z_tas.OtpInputPage" android:exported="false" android:windowSoftInputMode="adjustResize" />
-        <activity android:name="com.example.z_tas.MainActivity" android:exported="false" />
-        <activity android:name="com.example.z_tas.NotificationPage" android:exported="false" />
-        <activity android:name="com.example.z_tas.RegistrationPage" android:exported="false" android:windowSoftInputMode="adjustResize" />
-        <activity android:name="com.example.z_tas.LoginActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
-        <activity android:name="com.example.z_tas.PasskeyActivity" android:exported="false" />
-        <activity android:name="com.example.z_tas.HomeActivity" android:exported="false" />
-        <activity android:name="com.example.z_tas.ProfileActivity" android:exported="false" />
-        <activity android:name="com.example.z_tas.MFAActivity" android:exported="false" />
-        <activity android:name="com.example.z_tas.SettingsActivity" android:exported="false" />
+        <activity android:name="com.ztas.app.OtpInputPage" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:name="com.ztas.app.MainActivity" android:exported="false" />
+        <activity android:name="com.ztas.app.NotificationPage" android:exported="false" />
+        <activity android:name="com.ztas.app.RegistrationPage" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:name="com.ztas.app.LoginActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:name="com.ztas.app.PasskeyActivity" android:exported="false" />
+        <activity android:name="com.ztas.app.HomeActivity" android:exported="false" />
+        <activity android:name="com.ztas.app.ProfileActivity" android:exported="false" />
+        <activity android:name="com.ztas.app.MFAActivity" android:exported="false" />
+        <activity android:name="com.ztas.app.SettingsActivity" android:exported="false" />
 
     </application>
 
