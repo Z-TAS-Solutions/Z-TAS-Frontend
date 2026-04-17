@@ -104,6 +104,16 @@ class PasskeyActivity : AppCompatActivity() {
                 if (isFinishing || isDestroyed) {
                     return@launch
                 }
+                if (looksLikePhoneNumber(userId)) {
+                    Log.e(TAG, "Invalid custom_id for passkey flow (looks like phone): $userId")
+                    Toast.makeText(
+                        this@PasskeyActivity,
+                        "Passkey setup blocked: registration returned an invalid user identifier. Please register again.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    onComplete()
+                    return@launch
+                }
                 // ── Step 1: Begin Registration ───────────────────────
                 val beginResponse = withContext(Dispatchers.IO) {
                     webAuthnApi.beginRegister(
@@ -365,5 +375,13 @@ class PasskeyActivity : AppCompatActivity() {
             Log.w(TAG, "Failed to decode clientDataJSON", e)
             null
         }
+    }
+
+    private fun looksLikePhoneNumber(value: String): Boolean {
+        val normalized = value.replace(Regex("[\\s-]"), "")
+        return normalized.matches(Regex("^\\+94\\d{9}$")) ||
+            normalized.matches(Regex("^0\\d{9}$")) ||
+            normalized.matches(Regex("^94\\d{9}$")) ||
+            normalized.matches(Regex("^7\\d{8}$"))
     }
 }

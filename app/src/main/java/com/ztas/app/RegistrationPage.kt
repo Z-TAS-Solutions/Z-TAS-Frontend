@@ -78,7 +78,7 @@ class RegistrationPage : AppCompatActivity() {
 
             if (phone.isEmpty()) { etPhone.error = "Phone number required"; return@setOnClickListener }
             if (!isValidSriLankanPhone(phone)) {
-                etPhone.error = "Use 07XXXXXXXX, 94XXXXXXXXX, or +94XXXXXXXXX"
+                etPhone.error = "Use 07XXXXXXXX or +94XXXXXXXXX"
                 return@setOnClickListener
             }
             val phoneForApi = normalizePhoneForApi(phone)
@@ -168,7 +168,7 @@ class RegistrationPage : AppCompatActivity() {
                         return@launch
                     }
 
-                    val resolvedUserId = body.userId ?: body.data?.customId.orEmpty()
+                    val resolvedUserId = body.data?.customId ?: body.customId ?: body.userId.orEmpty()
                     val resolvedMessage =
                         body.message
                             ?: if (body.status.equals("success", ignoreCase = true)) "Registration successful." else null
@@ -315,13 +315,20 @@ class RegistrationPage : AppCompatActivity() {
     }
 
     private fun isValidSriLankanPhone(phone: String): Boolean {
-        return phone.matches(Regex("^(?:07\\d{8}|94\\d{9}|\\+94\\d{9})$"))
+        // Keep strict to formats backend explicitly accepts.
+        return phone.matches(Regex("^07\\d{8}$")) || phone.matches(Regex("^\\+947\\d{8}$"))
     }
 
     private fun normalizePhoneForApi(phone: String): String {
+        // Canonicalize to one stable backend format: 07XXXXXXXX.
+        // This avoids backend issues where '+' might be stripped during later flows.
+        val cleaned = phone.replace(Regex("[\\s-]"), "")
         return when {
-            phone.startsWith("94") -> "+$phone"
-            else -> phone
+            cleaned.matches(Regex("^07\\d{8}$")) -> cleaned
+            cleaned.matches(Regex("^\\+94\\d{9}$")) -> "0${cleaned.removePrefix("+94")}"
+            cleaned.matches(Regex("^94\\d{9}$")) -> "0${cleaned.removePrefix("94")}"
+            cleaned.matches(Regex("^7\\d{8}$")) -> "0$cleaned"
+            else -> cleaned
         }
     }
 }

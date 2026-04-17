@@ -16,7 +16,8 @@ data class RegisterRequest(
 data class RegisterResponse(
     // Old/legacy shape (some backends returned this)
     @SerializedName(value = "message", alternate = ["detail"]) val message: String? = null,
-    @SerializedName(value = "user_id", alternate = ["userId", "custom_id"]) val userId: String? = null,
+    @SerializedName(value = "user_id", alternate = ["userId"]) val userId: String? = null,
+    @SerializedName("custom_id") val customId: String? = null,
 
     // Current backend shape (per API response):
     // { "data": { "success": true, "custom_id": "USR-..." }, "status": "success" }
