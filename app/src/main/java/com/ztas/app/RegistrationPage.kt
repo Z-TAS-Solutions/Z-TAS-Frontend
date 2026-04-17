@@ -82,6 +82,7 @@ class RegistrationPage : AppCompatActivity() {
                 return@setOnClickListener
             }
             val phoneForApi = normalizePhoneForApi(phone)
+            Log.d(TAG, "Phone normalized for register: input=$rawPhone normalized=$phoneForApi")
 
             // Disable inputs during API call (prevents "unresponsive" feel)
             val originalButtonText = registerButton.text
@@ -196,6 +197,7 @@ class RegistrationPage : AppCompatActivity() {
                     val intent = Intent(this@RegistrationPage, OtpInputPage::class.java).apply {
                         putExtra("USER_ID", resolvedUserId)
                         putExtra("USER_EMAIL", email)
+                        putExtra("USER_PHONE", phoneForApi)
                     }
                     startActivity(intent)
                     finish()

@@ -30,6 +30,7 @@ class PasskeyActivity : AppCompatActivity() {
     private val webAuthnApi = RetrofitClient.webAuthnApi
     private var userId: String = ""
     private var userEmail: String = ""
+    private var userPhone: String = ""
     private var isPasskeyRegistrationInProgress = false
 
     companion object {
@@ -45,12 +46,14 @@ class PasskeyActivity : AppCompatActivity() {
         // Receive user details from OtpInputPage
         userId = intent.getStringExtra("USER_ID") ?: ""
         userEmail = intent.getStringExtra("USER_EMAIL") ?: ""
+        userPhone = intent.getStringExtra("USER_PHONE") ?: ""
         if (userId.isEmpty()) {
             Log.w(TAG, "No USER_ID received — passkey registration will fail")
         }
         if (userEmail.isEmpty()) {
             Log.w(TAG, "No USER_EMAIL received — begin register may fail")
         }
+        Log.d(TAG, "Passkey context: userId=$userId email=$userEmail phoneFromRegister=$userPhone")
 
         // Point 1
         setupFeature(

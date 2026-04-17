@@ -24,6 +24,7 @@ class OtpInputPage : AppCompatActivity() {
     private val userApi = RetrofitClient.userApi
     private var userId: String = ""
     private var userEmail: String = ""
+    private var userPhone: String = ""
     private var isVerifying = false
 
     companion object {
@@ -37,6 +38,7 @@ class OtpInputPage : AppCompatActivity() {
         // Receive userId from RegistrationPage
         userId = intent.getStringExtra("USER_ID") ?: ""
         userEmail = intent.getStringExtra("USER_EMAIL") ?: ""
+        userPhone = intent.getStringExtra("USER_PHONE") ?: ""
         if (userId.isEmpty()) {
             Log.w(TAG, "No USER_ID received — OTP verification will fail")
         }
@@ -179,6 +181,7 @@ class OtpInputPage : AppCompatActivity() {
                         val intent = Intent(this@OtpInputPage, PasskeyActivity::class.java).apply {
                             putExtra("USER_ID", userId)
                             putExtra("USER_EMAIL", userEmail)
+                            putExtra("USER_PHONE", userPhone)
                         }
                         startActivity(intent)
                         finish()
