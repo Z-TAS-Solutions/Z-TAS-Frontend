@@ -63,7 +63,8 @@ class RegistrationPage : AppCompatActivity() {
             val name = etName.text.toString().trim()
             val email = etEmail.text.toString().trim()
             val nic = etNIC.text.toString().trim()
-            val phone = etPhone.text.toString().trim()
+            val rawPhone = etPhone.text.toString().trim()
+            val phone = rawPhone.replace(Regex("[\\s-]"), "")
 
             val nameRegex = Regex("^[A-Za-z ]+$")
 
@@ -76,7 +77,11 @@ class RegistrationPage : AppCompatActivity() {
             if (nic.isEmpty()) { etNIC.error = "NIC number is required"; return@setOnClickListener }
 
             if (phone.isEmpty()) { etPhone.error = "Phone number required"; return@setOnClickListener }
-            if (!phone.matches(Regex("^[0-9]{10}$"))) { etPhone.error = "Enter a valid 10 digit phone number"; return@setOnClickListener }
+            if (!isValidSriLankanPhone(phone)) {
+                etPhone.error = "Use 07XXXXXXXX, 94XXXXXXXXX, or +94XXXXXXXXX"
+                return@setOnClickListener
+            }
+            val phoneForApi = normalizePhoneForApi(phone)
 
             // Disable inputs during API call (prevents "unresponsive" feel)
             val originalButtonText = registerButton.text
@@ -86,7 +91,7 @@ class RegistrationPage : AppCompatActivity() {
             etEmail.isEnabled = false
             etNIC.isEnabled = false
             etPhone.isEnabled = false
-            registerUser(name, email, nic, phone) {
+            registerUser(name, email, nic, phoneForApi) {
                 registerButton.isEnabled = true
                 registerButton.text = originalButtonText
                 etName.isEnabled = true
@@ -307,5 +312,16 @@ class RegistrationPage : AppCompatActivity() {
         }
 
         return found.toList()
+    }
+
+    private fun isValidSriLankanPhone(phone: String): Boolean {
+        return phone.matches(Regex("^(?:07\\d{8}|94\\d{9}|\\+94\\d{9})$"))
+    }
+
+    private fun normalizePhoneForApi(phone: String): String {
+        return when {
+            phone.startsWith("94") -> "+$phone"
+            else -> phone
+        }
     }
 }
