@@ -10,7 +10,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.CredentialManager
-import androidx.credentials.PublicKeyCredential
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
 import androidx.lifecycle.lifecycleScope
@@ -140,10 +139,7 @@ class PasskeyActivity : AppCompatActivity() {
                 Log.d(TAG, "Begin register rp.id=${beginBody.data?.creationData?.publicKey?.rp?.id ?: beginBody.rp?.id}")
 
                 // ── Step 2: CredentialManager — user authenticates ───
-                val createRequest = CreatePublicKeyCredentialRequest(requestJson)
-                val result = credentialManager.createCredential(this@PasskeyActivity, createRequest)
-
-                val credential = result
+                val credential = createCredentialWithFallback(requestJson)
                 if (credential !is androidx.credentials.CreatePublicKeyCredentialResponse) {
                     Toast.makeText(this@PasskeyActivity, "Unexpected credential type", Toast.LENGTH_SHORT).show()
                     onComplete()
@@ -174,13 +170,27 @@ class PasskeyActivity : AppCompatActivity() {
                     type = registrationJson.optString("type", "public-key")
                 )
 
+                // Log the full request being sent to the backend
+                Log.d(TAG, "╔══ Finish Register Request ══════════════════")
+                Log.d(TAG, "║ sessionToken=$sessionToken")
+                Log.d(TAG, "║ id=${finishRequest.id}")
+                Log.d(TAG, "║ rawId=${finishRequest.rawId}")
+                Log.d(TAG, "║ type=${finishRequest.type}")
+                Log.d(TAG, "║ attestationObject=${finishRequest.response.attestationObject.take(80)}...")
+                Log.d(TAG, "║ clientDataJSON=${finishRequest.response.clientDataJSON}")
+                Log.d(TAG, "╚════════════════════════════════════════════")
+
                 val finishResponse = withContext(Dispatchers.IO) {
                     webAuthnApi.finishRegister(sessionToken, finishRequest)
                 }
 
                 if (!finishResponse.isSuccessful || finishResponse.body() == null) {
                     val errorBody = finishResponse.errorBody()?.string() ?: "Unknown error"
-                    Log.e(TAG, "Finish register failed: ${finishResponse.code()} — $errorBody")
+                    Log.e(TAG, "╔══ Finish Register FAILED ══════════════════")
+                    Log.e(TAG, "║ HTTP ${finishResponse.code()}")
+                    Log.e(TAG, "║ Headers: ${finishResponse.headers()}")
+                    Log.e(TAG, "║ Error body: $errorBody")
+                    Log.e(TAG, "╚════════════════════════════════════════════")
                     val userMessage = if (
                         errorBody.contains("Error validating origin", ignoreCase = true) ||
                         errorBody.contains("invalid credential response", ignoreCase = true)
@@ -305,6 +315,36 @@ class PasskeyActivity : AppCompatActivity() {
             }
         }
 
+        return json.toString()
+    }
+
+    private suspend fun createCredentialWithFallback(
+        requestJson: String
+    ): androidx.credentials.CreateCredentialResponse {
+        return try {
+            val createRequest = CreatePublicKeyCredentialRequest(requestJson)
+            credentialManager.createCredential(this@PasskeyActivity, createRequest)
+        } catch (e: CreatePublicKeyCredentialDomException) {
+            val shouldRetryWithSimplifiedRequest =
+                e.message?.contains("incoming request cannot be validated", ignoreCase = true) == true
+            if (!shouldRetryWithSimplifiedRequest) {
+                throw e
+            }
+
+            // Some providers reject stricter options. Retry once with a
+            // compatibility-focused payload (attestation/hints/selection removed).
+            val simplifiedRequestJson = buildSimplifiedCreateCredentialJson(requestJson)
+            Log.w(TAG, "Retrying createCredential with simplified request JSON: $simplifiedRequestJson")
+            val retryRequest = CreatePublicKeyCredentialRequest(simplifiedRequestJson)
+            credentialManager.createCredential(this@PasskeyActivity, retryRequest)
+        }
+    }
+
+    private fun buildSimplifiedCreateCredentialJson(originalRequestJson: String): String {
+        val json = JSONObject(originalRequestJson)
+        json.put("attestation", "none")
+        json.remove("hints")
+        json.remove("authenticatorSelection")
         return json.toString()
     }
 

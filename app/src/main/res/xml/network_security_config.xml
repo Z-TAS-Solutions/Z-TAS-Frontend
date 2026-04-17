@@ -8,7 +8,7 @@
     <base-config cleartextTrafficPermitted="true" />
 
     <domain-config cleartextTrafficPermitted="true">
-        <!-- IP-based domain entry for http://104.43.91.57:8000 -->
-        <domain includeSubdomains="false">104.43.91.57</domain>
+        <!-- IP-based domain entry for http://172.188.97.210:8000 -->
+        <domain includeSubdomains="false">172.188.97.210</domain>
     </domain-config>
 </network-security-config>
