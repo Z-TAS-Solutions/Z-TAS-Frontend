@@ -403,12 +403,6 @@ class PasskeyActivity : AppCompatActivity() {
             ).show()
             return
         }
-        startActivity(Intent(this, OtpInputPage::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra("USER_ID", userId)
-            putExtra("USER_EMAIL", userEmail)
-            putExtra("USER_PHONE", userPhone)
-        })
         finish()
     }
 

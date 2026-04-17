@@ -222,9 +222,14 @@ class OtpInputPage : AppCompatActivity() {
     }
 
     private fun navigateBackToRegistration() {
-        startActivity(Intent(this, RegistrationPage::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        })
+        if (isVerifying) {
+            Toast.makeText(
+                this,
+                "Please wait until verification completes.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
         finish()
     }
 
