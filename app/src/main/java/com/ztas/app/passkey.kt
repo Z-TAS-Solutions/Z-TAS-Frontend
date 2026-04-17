@@ -2,6 +2,7 @@ package com.ztas.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
 import android.view.View
 import android.widget.TextView
@@ -22,6 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.nio.charset.StandardCharsets
 
 class PasskeyActivity : AppCompatActivity() {
 
@@ -121,6 +123,7 @@ class PasskeyActivity : AppCompatActivity() {
                 }
                 val requestJson = buildCreateCredentialJson(beginBody)
                 Log.d(TAG, "CredentialManager create request JSON: $requestJson")
+                Log.d(TAG, "Begin register rp.id=${beginBody.data?.creationData?.publicKey?.rp?.id ?: beginBody.rp?.id}")
 
                 // ── Step 2: CredentialManager — user authenticates ───
                 val createRequest = CreatePublicKeyCredentialRequest(requestJson)
@@ -138,6 +141,13 @@ class PasskeyActivity : AppCompatActivity() {
                 Log.d(TAG, "Registration JSON: $registrationJson")
 
                 val responseObj = registrationJson.getJSONObject("response")
+                val clientDataBase64Url = responseObj.getString("clientDataJSON")
+                parseClientData(clientDataBase64Url)?.let { clientData ->
+                    Log.d(
+                        TAG,
+                        "clientDataJSON decoded: origin=${clientData.optString("origin")}, type=${clientData.optString("type")}"
+                    )
+                }
 
                 // ── Step 3: Finish Registration ──────────────────────
                 val finishRequest = FinishRegisterRequest(
@@ -157,7 +167,15 @@ class PasskeyActivity : AppCompatActivity() {
                 if (!finishResponse.isSuccessful || finishResponse.body() == null) {
                     val errorBody = finishResponse.errorBody()?.string() ?: "Unknown error"
                     Log.e(TAG, "Finish register failed: ${finishResponse.code()} — $errorBody")
-                    Toast.makeText(this@PasskeyActivity, "Passkey save failed: $errorBody", Toast.LENGTH_LONG).show()
+                    val userMessage = if (
+                        errorBody.contains("Error validating origin", ignoreCase = true) ||
+                        errorBody.contains("invalid credential response", ignoreCase = true)
+                    ) {
+                        "Passkey save failed: backend origin validation failed. Ask backend to allow Android WebAuthn origin and match rp.id with the same verified domain."
+                    } else {
+                        "Passkey save failed: $errorBody"
+                    }
+                    Toast.makeText(this@PasskeyActivity, userMessage, Toast.LENGTH_LONG).show()
                     onComplete()
                     return@launch
                 }
@@ -279,5 +297,18 @@ class PasskeyActivity : AppCompatActivity() {
         val root = findViewById<View>(id)
         root.findViewById<TextView>(R.id.tvFeatureTitle).text = title
         root.findViewById<TextView>(R.id.tvFeatureDesc).text = desc
+    }
+
+    private fun parseClientData(clientDataBase64Url: String): JSONObject? {
+        return try {
+            val decoded = Base64.decode(
+                clientDataBase64Url,
+                Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
+            )
+            JSONObject(String(decoded, StandardCharsets.UTF_8))
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to decode clientDataJSON", e)
+            null
+        }
     }
 }
