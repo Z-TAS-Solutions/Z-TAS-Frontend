@@ -13,11 +13,11 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.PublicKeyCredential
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
+import androidx.lifecycle.lifecycleScope
 import com.ztas.app.network.AttestationResponseBody
 import com.ztas.app.network.BeginRegisterRequest
 import com.ztas.app.network.FinishRegisterRequest
 import com.ztas.app.network.RetrofitClient
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -31,6 +31,7 @@ class PasskeyActivity : AppCompatActivity() {
     private val webAuthnApi = RetrofitClient.webAuthnApi
     private var userId: String = ""
     private var userEmail: String = ""
+    private var isPasskeyRegistrationInProgress = false
 
     companion object {
         private const val TAG = "PasskeyActivity"
@@ -89,8 +90,21 @@ class PasskeyActivity : AppCompatActivity() {
      *  3. POST /webauthn/register/finish → send attestation to backend
      */
     private fun registerPasskey(onComplete: () -> Unit) {
-        CoroutineScope(Dispatchers.Main).launch {
+        if (isPasskeyRegistrationInProgress) {
+            Toast.makeText(
+                this@PasskeyActivity,
+                "Passkey setup is already in progress.",
+                Toast.LENGTH_SHORT
+            ).show()
+            onComplete()
+            return
+        }
+        isPasskeyRegistrationInProgress = true
+        lifecycleScope.launch {
             try {
+                if (isFinishing || isDestroyed) {
+                    return@launch
+                }
                 // ── Step 1: Begin Registration ───────────────────────
                 val beginResponse = withContext(Dispatchers.IO) {
                     webAuthnApi.beginRegister(
@@ -212,6 +226,7 @@ class PasskeyActivity : AppCompatActivity() {
                     Toast.LENGTH_LONG
                 ).show()
             } finally {
+                isPasskeyRegistrationInProgress = false
                 onComplete()
             }
         }
