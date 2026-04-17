@@ -2,6 +2,9 @@ package com.ztas.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.util.Base64
 import android.util.Log
 import android.widget.Button
@@ -43,6 +46,20 @@ class LoginActivity : AppCompatActivity() {
         val etName = findViewById<EditText>(R.id.etName)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         val tvToRegister = findViewById<TextView>(R.id.tvToRegister)
+        val registerText = "New user? Create an account"
+        val actionText = "Create an account"
+        val spannable = SpannableString(registerText)
+        val startIndex = registerText.indexOf(actionText)
+        if (startIndex >= 0) {
+            val endIndex = startIndex + actionText.length
+            spannable.setSpan(
+                ForegroundColorSpan(android.graphics.Color.parseColor("#00C4FF")),
+                startIndex,
+                endIndex,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            tvToRegister.text = spannable
+        }
 
         tvToRegister.setOnClickListener {
             val intent = Intent(this, RegistrationPage::class.java)
