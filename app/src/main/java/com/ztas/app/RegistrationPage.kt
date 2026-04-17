@@ -63,8 +63,8 @@ class RegistrationPage : AppCompatActivity() {
             val name = etName.text.toString().trim()
             val email = etEmail.text.toString().trim()
             val nic = etNIC.text.toString().trim()
-            val rawPhone = etPhone.text.toString().trim()
-            val phone = rawPhone.replace(Regex("[\\s-]"), "")
+            val rawPhone = etPhone.text.toString()
+            val phone = sanitizePhoneInput(rawPhone)
 
             val nameRegex = Regex("^[A-Za-z ]+$")
 
@@ -82,6 +82,10 @@ class RegistrationPage : AppCompatActivity() {
                 return@setOnClickListener
             }
             val phoneForApi = normalizePhoneForApi(phone)
+            if (!phoneForApi.matches(Regex("^07\\d{8}$"))) {
+                etPhone.error = "Invalid phone number format"
+                return@setOnClickListener
+            }
             Log.d(TAG, "Phone normalized for register: input=$rawPhone normalized=$phoneForApi")
 
             // Disable inputs during API call (prevents "unresponsive" feel)
@@ -324,7 +328,7 @@ class RegistrationPage : AppCompatActivity() {
     private fun normalizePhoneForApi(phone: String): String {
         // Canonicalize to one stable backend format: 07XXXXXXXX.
         // This avoids backend issues where '+' might be stripped during later flows.
-        val cleaned = phone.replace(Regex("[\\s-]"), "")
+        val cleaned = sanitizePhoneInput(phone)
         return when {
             cleaned.matches(Regex("^07\\d{8}$")) -> cleaned
             cleaned.matches(Regex("^\\+94\\d{9}$")) -> "0${cleaned.removePrefix("+94")}"
@@ -332,5 +336,17 @@ class RegistrationPage : AppCompatActivity() {
             cleaned.matches(Regex("^7\\d{8}$")) -> "0$cleaned"
             else -> cleaned
         }
+    }
+
+    private fun sanitizePhoneInput(input: String): String {
+        // Keep only digits and a leading '+'; strips hidden/unicode separators too.
+        val filtered = buildString(input.length) {
+            input.forEachIndexed { index, ch ->
+                if (ch.isDigit() || (ch == '+' && index == 0)) {
+                    append(ch)
+                }
+            }
+        }
+        return filtered.trim()
     }
 }
