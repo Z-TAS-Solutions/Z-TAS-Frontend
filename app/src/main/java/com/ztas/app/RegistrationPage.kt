@@ -197,7 +197,7 @@ class RegistrationPage : AppCompatActivity() {
                     val intent = Intent(this@RegistrationPage, OtpInputPage::class.java).apply {
                         putExtra("USER_ID", resolvedUserId)
                         putExtra("USER_EMAIL", email)
-                        putExtra("USER_PHONE", phoneForApi)
+                        putExtra("USER_PHONE", phone)
                     }
                     startActivity(intent)
                     finish()

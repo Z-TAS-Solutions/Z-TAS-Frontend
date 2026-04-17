@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.CredentialManager
@@ -54,6 +55,11 @@ class PasskeyActivity : AppCompatActivity() {
             Log.w(TAG, "No USER_EMAIL received — begin register may fail")
         }
         Log.d(TAG, "Passkey context: userId=$userId email=$userEmail phoneFromRegister=$userPhone")
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                navigateBackToOtpPage()
+            }
+        })
 
         // Point 1
         setupFeature(
@@ -386,5 +392,28 @@ class PasskeyActivity : AppCompatActivity() {
             normalized.matches(Regex("^0\\d{9}$")) ||
             normalized.matches(Regex("^94\\d{9}$")) ||
             normalized.matches(Regex("^7\\d{8}$"))
+    }
+
+    private fun navigateBackToOtpPage() {
+        if (isPasskeyRegistrationInProgress) {
+            Toast.makeText(
+                this,
+                "Please wait until passkey setup completes.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+        startActivity(Intent(this, OtpInputPage::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("USER_ID", userId)
+            putExtra("USER_EMAIL", userEmail)
+            putExtra("USER_PHONE", userPhone)
+        })
+        finish()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        navigateBackToOtpPage()
     }
 }
