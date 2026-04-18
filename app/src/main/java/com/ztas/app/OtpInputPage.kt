@@ -2,6 +2,7 @@ package com.ztas.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -14,6 +15,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.core.widget.addTextChangedListener
+import com.ztas.app.network.ResendOtpRequest
 import com.ztas.app.network.RetrofitClient
 import com.ztas.app.network.VerifyOtpRequest
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +30,8 @@ class OtpInputPage : AppCompatActivity() {
     private var userEmail: String = ""
     private var userPhone: String = ""
     private var isVerifying = false
+    private var isResending = false
+    private var resendCooldownTimer: CountDownTimer? = null
 
     companion object {
         private const val TAG = "OtpInputPage"
@@ -57,7 +61,17 @@ class OtpInputPage : AppCompatActivity() {
                 }
             }
         }
-        Log.d(TAG, "OTP screen for custom_id=$userId (code is sent by server after register/new — not requested from this screen)")
+        Log.d(TAG, "OTP screen for custom_id=$userId")
+
+        val tvResendOtp = findViewById<TextView>(R.id.tvResendOtp)
+        tvResendOtp.setOnClickListener {
+            if (userId.isBlank()) {
+                Toast.makeText(this, "Missing account id — go back and register again.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (isResending || isVerifying || !tvResendOtp.isEnabled) return@setOnClickListener
+            resendOtp(tvResendOtp)
+        }
 
         val btnContinue = findViewById<Button>(R.id.btnContinue)
         val etOtpPassword = findViewById<EditText>(R.id.etOtpPassword)
@@ -126,6 +140,83 @@ class OtpInputPage : AppCompatActivity() {
             verifyOtp(otp) {
                 isVerifying = false
                 btnContinue.isEnabled = true
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        resendCooldownTimer?.cancel()
+        super.onDestroy()
+    }
+
+    private fun startResendCooldown(tvResend: TextView, durationMs: Long) {
+        resendCooldownTimer?.cancel()
+        tvResend.isEnabled = false
+        tvResend.alpha = 0.5f
+        resendCooldownTimer = object : CountDownTimer(durationMs, 1000L) {
+            override fun onTick(msUntilFinished: Long) {
+                val sec = (msUntilFinished + 999) / 1000
+                tvResend.text = "Resend in ${sec}s"
+            }
+
+            override fun onFinish() {
+                tvResend.isEnabled = true
+                tvResend.alpha = 1f
+                tvResend.text = "Resend code"
+            }
+        }.start()
+    }
+
+    private fun resendOtp(tvResend: TextView) {
+        isResending = true
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    userApi.resendRegistrationOtp(
+                        ResendOtpRequest(
+                            customId = userId,
+                            userId = userId,
+                            email = userEmail.takeIf { it.isNotBlank() },
+                            phone = userPhone.takeIf { it.isNotBlank() }
+                        )
+                    )
+                }
+                val bodyStr =
+                    if (response.isSuccessful) {
+                        response.body()?.string().orEmpty()
+                    } else {
+                        response.errorBody()?.string().orEmpty()
+                    }
+                val msgFromJson = runCatching {
+                    org.json.JSONObject(bodyStr).optString("message").trim()
+                }.getOrDefault("")
+
+                if (response.isSuccessful) {
+                    val msg = msgFromJson.ifEmpty {
+                        "If delivery is configured, a new code should arrive shortly."
+                    }
+                    Toast.makeText(this@OtpInputPage, msg, Toast.LENGTH_LONG).show()
+                    startResendCooldown(tvResend, 45_000L)
+                } else {
+                    val friendly = when (response.code()) {
+                        404, 405 ->
+                            "Resend is not available on the server yet. Ask the team to add POST admin/users/register/resendOTP."
+                        else ->
+                            msgFromJson.ifEmpty { "Could not resend code (HTTP ${response.code()})." }
+                    }
+                    Toast.makeText(this@OtpInputPage, friendly, Toast.LENGTH_LONG).show()
+                    startResendCooldown(tvResend, 15_000L)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Resend OTP failed", e)
+                Toast.makeText(
+                    this@OtpInputPage,
+                    "Resend failed: ${e.message ?: "unknown error"}",
+                    Toast.LENGTH_LONG
+                ).show()
+                startResendCooldown(tvResend, 15_000L)
+            } finally {
+                isResending = false
             }
         }
     }

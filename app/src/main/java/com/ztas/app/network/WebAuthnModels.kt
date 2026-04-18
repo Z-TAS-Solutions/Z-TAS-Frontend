@@ -60,6 +60,17 @@ data class VerifyOtpResponseData(
     @SerializedName(value = "message", alternate = ["detail"]) val message: String? = null
 )
 
+/**
+ * POST `admin/users/register/resendOTP` — asks the server to send another registration OTP.
+ * Backend may only require [customId]; [email] / [phone] help if the API matches on those fields.
+ */
+data class ResendOtpRequest(
+    @SerializedName("custom_id") val customId: String,
+    @SerializedName("user_id") val userId: String? = null,
+    val email: String? = null,
+    @SerializedName("phone_no") val phone: String? = null
+)
+
 // ═══════════════════════════════════════════════════════════════
 // WebAuthn — Login (begin / finish)
 // ═══════════════════════════════════════════════════════════════

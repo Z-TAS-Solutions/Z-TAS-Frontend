@@ -73,6 +73,19 @@
                 android:textSize="12sp" />
 
             <TextView
+                android:id="@+id/tvResendOtp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:paddingVertical="6dp"
+                android:paddingHorizontal="4dp"
+                android:text="Resend code"
+                android:textColor="@color/ztas_cyan"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"

@@ -16,6 +16,9 @@ interface UserApi {
     @POST("admin/users/register/verifyOTP")
     suspend fun verifyOtp(@Body request: VerifyOtpRequest): Response<VerifyOtpResponse>
 
+    @POST("admin/users/register/resendOTP")
+    suspend fun resendRegistrationOtp(@Body request: ResendOtpRequest): Response<ResponseBody>
+
     @GET("user/profile")
     suspend fun getProfile(
         @Header("Authorization") token: String
