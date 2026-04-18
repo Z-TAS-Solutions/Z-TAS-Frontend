@@ -3,11 +3,13 @@ package com.ztas.app
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.OnBackPressedCallback
@@ -42,6 +44,20 @@ class OtpInputPage : AppCompatActivity() {
         if (userId.isEmpty()) {
             Log.w(TAG, "No USER_ID received — OTP verification will fail")
         }
+
+        val tvDest = findViewById<TextView>(R.id.tvOtpDestination)
+        if (userEmail.isNotBlank()) {
+            tvDest.visibility = View.VISIBLE
+            tvDest.text = buildString {
+                append("Account email: ")
+                append(maskEmail(userEmail))
+                if (userPhone.isNotBlank()) {
+                    append("\nPhone on file: ")
+                    append(maskPhone(userPhone))
+                }
+            }
+        }
+        Log.d(TAG, "OTP screen for custom_id=$userId (code is sent by server after register/new — not requested from this screen)")
 
         val btnContinue = findViewById<Button>(R.id.btnContinue)
         val etOtpPassword = findViewById<EditText>(R.id.etOtpPassword)
@@ -236,6 +252,27 @@ class OtpInputPage : AppCompatActivity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         navigateBackToRegistration()
+    }
+
+    private fun maskEmail(email: String): String {
+        val at = email.indexOf('@')
+        if (at <= 0) return email
+        val local = email.substring(0, at)
+        val domain = email.substring(at)
+        if (local.length <= 2) return "***$domain"
+        return local.take(2) + "•••" + domain
+    }
+
+    private fun maskPhone(phone: String): String {
+        val digits = phone.filter { it.isDigit() }
+        if (digits.length < 5) return phone
+        val head = 3.coerceAtMost(digits.length - 2)
+        val tail = 2
+        return buildString {
+            append(digits.take(head))
+            repeat((digits.length - head - tail).coerceAtLeast(2)) { append('•') }
+            append(digits.takeLast(tail))
+        }
     }
 
     private fun sanitizeServerError(raw: String, code: Int): String {

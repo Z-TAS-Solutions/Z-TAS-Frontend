@@ -75,6 +75,11 @@ class RegistrationPage : AppCompatActivity() {
             if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) { etEmail.error = "Enter a valid email"; return@setOnClickListener }
 
             if (nic.isEmpty()) { etNIC.error = "NIC number is required"; return@setOnClickListener }
+            val nicForApi = normalizeNicForApi(nic)
+            if (!isValidSriLankanNic(nicForApi)) {
+                etNIC.error = "Use old NIC (9 digits + V or X) or new 12-digit NIC"
+                return@setOnClickListener
+            }
 
             if (phone.isEmpty()) { etPhone.error = "Phone number required"; return@setOnClickListener }
             if (!isValidSriLankanPhone(phone)) {
@@ -96,7 +101,7 @@ class RegistrationPage : AppCompatActivity() {
             etEmail.isEnabled = false
             etNIC.isEnabled = false
             etPhone.isEnabled = false
-            registerUser(name, email, nic, phoneForApi) {
+            registerUser(name, email, nicForApi, phoneForApi) {
                 registerButton.isEnabled = true
                 registerButton.text = originalButtonText
                 etName.isEnabled = true
@@ -318,6 +323,29 @@ class RegistrationPage : AppCompatActivity() {
         }
 
         return found.toList()
+    }
+
+    /**
+     * Sri Lankan NIC: legacy **9 digits + V or X**, or **new 12-digit** numeric NIC.
+     * Spaces/dashes are stripped before checks; letter suffix normalized to uppercase.
+     */
+    private fun sanitizeNicInput(raw: String): String =
+        raw.trim().replace(Regex("[\\s-]"), "")
+
+    private fun isValidSriLankanNic(nic: String): Boolean {
+        val n = nic.trim()
+        if (n.matches(Regex("\\d{9}[VvXx]"))) return true
+        if (n.matches(Regex("\\d{12}"))) return true
+        return false
+    }
+
+    /** Sends NIC in the shape the backend validator expects. */
+    private fun normalizeNicForApi(raw: String): String {
+        val n = sanitizeNicInput(raw)
+        if (n.matches(Regex("\\d{9}[VvXx]"))) {
+            return n.dropLast(1) + n.last().uppercaseChar()
+        }
+        return n
     }
 
     private fun isValidSriLankanPhone(phone: String): Boolean {

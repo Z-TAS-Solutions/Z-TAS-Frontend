@@ -59,14 +59,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:text="Use the passkey saved on this device (e.g. Samsung Pass). Tap the button below."
+                    android:text="Enter the email you registered with, then authenticate with your passkey."
                     android:textColor="#8B9CB7"
                     android:textSize="14sp" />
 
                 <EditText
                     android:id="@+id/etName"
                     style="@style/CyberInputStyle"
-                    android:visibility="gone"
                     android:hint="Email"
                     android:inputType="textEmailAddress"
                     android:autofillHints="emailAddress" />

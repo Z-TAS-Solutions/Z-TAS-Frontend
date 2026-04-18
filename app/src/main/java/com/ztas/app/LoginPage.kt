@@ -6,7 +6,9 @@ import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.util.Log
+import android.util.Patterns
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -41,6 +43,7 @@ class LoginActivity : AppCompatActivity() {
 
         credentialManager = CredentialManager.create(this)
 
+        val etEmail = findViewById<EditText>(R.id.etName)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         val tvToRegister = findViewById<TextView>(R.id.tvToRegister)
         val registerText = "New user? Create an account"
@@ -64,26 +67,33 @@ class LoginActivity : AppCompatActivity() {
         }
 
         btnLogin.setOnClickListener {
+            val email = etEmail.text.toString().trim()
+            if (email.isEmpty()) {
+                etEmail.error = "Email is required"
+                return@setOnClickListener
+            }
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                etEmail.error = "Enter a valid email"
+                return@setOnClickListener
+            }
+
             btnLogin.isEnabled = false
-            // Discoverable begin: omit username so server uses BeginDiscoverableLogin (works with
-            // Samsung Pass even when FindByEmail does not Preload Credentials — see Z-QryptGIN user_repo).
-            authenticateWithPasskey {
+            authenticateWithPasskey(email) {
                 btnLogin.isEnabled = true
             }
         }
     }
 
     /**
-     * WebAuthn login: discoverable `login/begin` (omit `username`) so the device passkey store (e.g. Samsung Pass)
-     * can be used without the server preloading `Credentials` on `FindByEmail`.
-     * Parses wrapped `{ data: { session_token, assertion_data } }` and sends `X-Session-Token` on `login/finish`.
+     * WebAuthn login: `login/begin` with registered email, then CredentialManager, then `login/finish`
+     * with `X-Session-Token` from begin. Server binds JSON `username` to email lookup.
      */
-    private fun authenticateWithPasskey(onComplete: () -> Unit) {
+    private fun authenticateWithPasskey(email: String, onComplete: () -> Unit) {
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                // ── Step 1: Begin Login (discoverable) ─────────────────────
+                // ── Step 1: Begin Login ───────────────────────────────────
                 val beginResponse = withContext(Dispatchers.IO) {
-                    webAuthnApi.beginLogin(BeginLoginRequest())
+                    webAuthnApi.beginLogin(BeginLoginRequest(email = email))
                 }
 
                 if (!beginResponse.isSuccessful || beginResponse.body() == null) {

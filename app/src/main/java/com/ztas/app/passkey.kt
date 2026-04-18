@@ -137,7 +137,11 @@ class PasskeyActivity : AppCompatActivity() {
                 if (!beginResponse.isSuccessful || beginResponse.body() == null) {
                     val errorBody = beginResponse.errorBody()?.string() ?: "Unknown error"
                     Log.e(TAG, "Begin register failed: ${beginResponse.code()} — $errorBody")
-                    Toast.makeText(this@PasskeyActivity, "Passkey setup failed: $errorBody", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this@PasskeyActivity,
+                        "Passkey setup failed: ${apiErrorUserMessage(errorBody)}",
+                        Toast.LENGTH_LONG
+                    ).show()
                     onComplete()
                     return@launch
                 }
@@ -210,13 +214,14 @@ class PasskeyActivity : AppCompatActivity() {
                     Log.e(TAG, "║ Headers: ${finishResponse.headers()}")
                     Log.e(TAG, "║ Error body: $errorBody")
                     Log.e(TAG, "╚════════════════════════════════════════════")
-                    val userMessage = if (
+                    val userMessage = when {
                         errorBody.contains("Error validating origin", ignoreCase = true) ||
-                        errorBody.contains("invalid credential response", ignoreCase = true)
-                    ) {
-                        "Passkey save failed: backend origin validation failed. Ask backend to allow Android WebAuthn origin and match rp.id with the same verified domain."
-                    } else {
-                        "Passkey save failed: $errorBody"
+                            errorBody.contains("invalid credential response", ignoreCase = true) ->
+                            "Passkey save failed: backend origin validation failed. Ask backend to allow Android WebAuthn origin and match rp.id with the same verified domain."
+                        errorBody.contains("invalid NIC", ignoreCase = true) ->
+                            "Invalid NIC format. Go back to registration, enter a valid Sri Lankan NIC (9 digits + V/X or 12 digits), then complete OTP and passkey again."
+                        else ->
+                            "Passkey save failed: ${apiErrorUserMessage(errorBody)}"
                     }
                     Toast.makeText(this@PasskeyActivity, userMessage, Toast.LENGTH_LONG).show()
                     onComplete()
@@ -383,6 +388,16 @@ class PasskeyActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.w(TAG, "Failed to decode clientDataJSON", e)
             null
+        }
+    }
+
+    /** Prefer JSON `message` from Gin-style error bodies instead of dumping raw JSON. */
+    private fun apiErrorUserMessage(body: String): String {
+        return try {
+            val o = JSONObject(body)
+            o.optString("message").ifEmpty { body }
+        } catch (_: Exception) {
+            body
         }
     }
 
