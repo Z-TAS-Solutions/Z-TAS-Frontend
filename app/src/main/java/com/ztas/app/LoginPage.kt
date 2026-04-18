@@ -62,9 +62,8 @@ class LoginActivity : AppCompatActivity() {
         }
 
         tvToRegister.setOnClickListener {
-            val intent = Intent(this, RegistrationPage::class.java)
-            startActivity(intent)
-            finish()
+            startActivity(Intent(this, RegistrationPage::class.java))
+            // Do not finish(): keep Login in the back stack so Back returns here.
         }
 
         btnLogin.setOnClickListener {

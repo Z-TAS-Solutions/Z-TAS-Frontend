@@ -204,7 +204,7 @@ class RegistrationPage : AppCompatActivity() {
                         putExtra("USER_PHONE", phone)
                     }
                     startActivity(intent)
-                    finish()
+                    // Do not finish(): keep Registration in the back stack so Back from OTP returns here.
                 } else {
                     val errorBody = response.errorBody()?.string() ?: "Unknown error"
                     val cleanMessage = sanitizeServerError(errorBody, response.code())

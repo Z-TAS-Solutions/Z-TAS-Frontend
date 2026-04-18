@@ -184,7 +184,7 @@ class OtpInputPage : AppCompatActivity() {
                             putExtra("USER_PHONE", userPhone)
                         }
                         startActivity(intent)
-                        finish()
+                        // Do not finish(): keep OTP in the back stack so Back from Passkey returns here.
                     } else {
                         Toast.makeText(
                             this@OtpInputPage,
