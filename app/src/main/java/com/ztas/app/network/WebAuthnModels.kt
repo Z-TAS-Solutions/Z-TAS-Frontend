@@ -10,7 +10,8 @@ data class RegisterRequest(
     val name: String,
     val email: String,
     val nic: String,
-    val phone: String
+    /** Must match backend JSON tag (e.g. Go `json:"phone_no"`); plain `phone` was ignored → empty Redis. */
+    @SerializedName("phone_no") val phone: String
 )
 
 data class RegisterResponse(
