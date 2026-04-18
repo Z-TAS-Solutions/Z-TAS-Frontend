@@ -1,5 +1,6 @@
 package com.ztas.app.network
 
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -18,7 +19,7 @@ interface UserApi {
     @GET("user/profile")
     suspend fun getProfile(
         @Header("Authorization") token: String
-    ): Response<UserProfileResponse>
+    ): Response<ResponseBody>
 
     @DELETE("user/account/delete")
     suspend fun deleteAccount(

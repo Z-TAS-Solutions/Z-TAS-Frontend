@@ -193,7 +193,13 @@ class LoginActivity : AppCompatActivity() {
                 }
                 Log.d(TAG, "Login success — userId=${finishData.userId}, role=${finishData.role}")
 
-                // TODO: Persist finishBody.token securely (e.g. EncryptedSharedPreferences)
+                AuthPreferences.saveSession(
+                    this@LoginActivity,
+                    accessToken = finishData.token,
+                    userId = finishData.userId,
+                    email = finishData.email,
+                    role = finishData.role
+                )
 
                 Toast.makeText(this@LoginActivity, "Login Successful!", Toast.LENGTH_SHORT).show()
                 startActivity(Intent(this@LoginActivity, HomeActivity::class.java).apply {
@@ -246,7 +252,8 @@ class LoginActivity : AppCompatActivity() {
     private data class ParsedLoginFinish(
         val token: String,
         val userId: String,
-        val role: String
+        val role: String,
+        val email: String
     )
 
     /** Gin wraps `session_token` + `assertion_data` under `data` (see Z-QryptGIN `WebAuthnHandler.LoginBegin`). */
@@ -294,7 +301,8 @@ class LoginActivity : AppCompatActivity() {
                 else -> data.optString("user_id").ifEmpty { data.optString("userId") }
             }
             val role = data.optString("role").ifEmpty { "Client" }
-            ParsedLoginFinish(token, userId, role)
+            val email = data.optString("email")
+            ParsedLoginFinish(token, userId, role, email)
         } catch (e: Exception) {
             Log.e(TAG, "parseLoginFinishPayload", e)
             null

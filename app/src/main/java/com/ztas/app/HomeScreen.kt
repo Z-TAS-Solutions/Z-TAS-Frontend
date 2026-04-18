@@ -38,6 +38,7 @@ import com.ztas.app.network.SessionData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 
 val DeepNavy = Color(0xFF070B14)      
@@ -59,20 +60,48 @@ fun HomeScreen() {
     var sessionsError by remember { mutableStateOf<String?>(null) }
     var activities by remember { mutableStateOf<List<ActivityItem>>(emptyList()) }
     var activitiesLoading by remember { mutableStateOf(true) }
+    var welcomeTitle by remember { mutableStateOf("WELCOME") }
+    var welcomeSubtitle by remember { mutableStateOf("SYSTEM STATUS: OPTIMAL") }
 
-    // Fetch sessions + notifications on screen load
+    // Fetch profile, sessions + notifications on screen load
     LaunchedEffect(Unit) {
+        val bearer = AuthPreferences.bearerOrNull(context)
+        if (bearer != null) {
+            try {
+                val profileRaw = withContext(Dispatchers.IO) {
+                    RetrofitClient.userApi.getProfile(bearer).body()?.string()
+                }
+                val profile = profileRaw?.let { UserProfileJson.parse(it) }
+                if (profile != null) {
+                    welcomeTitle = "WELCOME, ${profile.name.uppercase(Locale.getDefault())}"
+                    welcomeSubtitle = "Signed in as ${profile.email}"
+                } else {
+                    val em = AuthPreferences.cachedEmail(context)
+                    if (em.isNotEmpty()) {
+                        welcomeTitle =
+                            "WELCOME, ${em.substringBefore('@').uppercase(Locale.getDefault())}"
+                        welcomeSubtitle = "Signed in as $em"
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("HomeScreen", "Profile fetch failed", e)
+            }
+        }
+
         // Sessions
         try {
-            val response = withContext(Dispatchers.IO) {
-                // TODO: Replace placeholder token with real token
-                RetrofitClient.sessionApi.getSessions("Bearer PLACEHOLDER_TOKEN")
-            }
-            if (response.isSuccessful && response.body() != null) {
-                sessions = response.body()!!.sessions
+            if (bearer == null) {
+                sessionsLoading = false
             } else {
-                sessionsError = "Failed to load sessions"
-                Log.e("HomeScreen", "Sessions error: ${response.code()}")
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.sessionApi.getSessions(bearer, limit = 20)
+                }
+                if (response.isSuccessful && response.body() != null) {
+                    sessions = response.body()!!.sessions
+                } else {
+                    sessionsError = "Failed to load sessions"
+                    Log.e("HomeScreen", "Sessions error: ${response.code()}")
+                }
             }
         } catch (e: Exception) {
             sessionsError = e.message
@@ -83,16 +112,18 @@ fun HomeScreen() {
 
         // Notifications (preview — limit 5)
         try {
-            val notifResponse = withContext(Dispatchers.IO) {
-                RetrofitClient.notificationApi.getNotifications(
-                    token = "Bearer PLACEHOLDER_TOKEN",
-                    limit = 5
-                )
-            }
-            if (notifResponse.isSuccessful && notifResponse.body() != null) {
-                activities = notifResponse.body()!!.notifications.map { it.toActivityItem() }
-            } else {
-                Log.e("HomeScreen", "Notifications error: ${notifResponse.code()}")
+            if (bearer != null) {
+                val notifResponse = withContext(Dispatchers.IO) {
+                    RetrofitClient.notificationApi.getNotifications(
+                        token = bearer,
+                        limit = 5
+                    )
+                }
+                if (notifResponse.isSuccessful && notifResponse.body() != null) {
+                    activities = notifResponse.body()!!.notifications.map { it.toActivityItem() }
+                } else {
+                    Log.e("HomeScreen", "Notifications error: ${notifResponse.code()}")
+                }
             }
         } catch (e: Exception) {
             Log.e("HomeScreen", "Notifications fetch failed", e)
@@ -107,6 +138,7 @@ fun HomeScreen() {
             isLoading = sessionsLoading,
             onDismiss = { showSessionsDialog = false },
             onForceLogoutAll = {
+                AuthPreferences.clear(context)
                 showSessionsDialog = false
                 context.startActivity(Intent(context, LoginActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -193,16 +225,16 @@ fun HomeScreen() {
                     .padding(horizontal = 20.dp)
                     .padding(top = 16.dp)
             ) {
-                // Welcome header
+                // Welcome header (filled from /user/profile or cached email after login)
                 Text(
-                    "WELCOME, USERNAME", 
+                    welcomeTitle,
                     color = TextPrimary,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 1.sp
                 )
                 Text(
-                    "SYSTEM STATUS: OPTIMAL", // Industrial status text
+                    welcomeSubtitle,
                     color = ZTasCyan,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
@@ -439,6 +471,7 @@ fun ZtasSessionsDialog(
     onDismiss: () -> Unit,
     onForceLogoutAll: () -> Unit
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var isLoggingOut by remember { mutableStateOf(false) }
 
@@ -523,8 +556,9 @@ fun ZtasSessionsDialog(
                         isLoggingOut = true
                         scope.launch {
                             try {
+                                val token = AuthPreferences.bearerOrNull(context) ?: return@launch
                                 val response = withContext(Dispatchers.IO) {
-                                    RetrofitClient.sessionApi.forceLogoutAllDevices("Bearer PLACEHOLDER_TOKEN")
+                                    RetrofitClient.sessionApi.forceLogoutAllDevices(token)
                                 }
                                 if (response.isSuccessful) {
                                     onForceLogoutAll()

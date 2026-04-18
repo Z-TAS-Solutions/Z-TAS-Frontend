@@ -1,16 +1,18 @@
 package com.ztas.app
 
-import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.Button
 import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import android.widget.ImageView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
@@ -21,11 +23,23 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 class ProfileActivity : AppCompatActivity() {
 
     private val userApi = RetrofitClient.userApi
     private val sessionApi = RetrofitClient.sessionApi
+
+    private val pickProfileImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            runCatching { persistProfileImageFromUri(uri) }
+                .onSuccess { applySavedProfilePhoto() }
+                .onFailure {
+                    Log.e(TAG, "Profile image save failed", it)
+                    Toast.makeText(this, "Could not save photo", Toast.LENGTH_SHORT).show()
+                }
+        }
+    }
 
     companion object {
         private const val TAG = "ProfileActivity"
@@ -69,32 +83,58 @@ class ProfileActivity : AppCompatActivity() {
             showDeleteAccount()
         }
 
-        // Fetch live profile data from API
+        findViewById<FrameLayout>(R.id.profilePicFrame)?.setOnClickListener {
+            pickProfileImage.launch("image/*")
+        }
+
+        applySavedProfilePhoto()
         loadProfileData()
+    }
+
+    private fun authHeaderOrNull(): String? = AuthPreferences.bearerOrNull(this)
+
+    private fun applySavedProfilePhoto() {
+        val path = AuthPreferences.profileImagePath(this) ?: return
+        val f = File(path)
+        if (f.exists()) {
+            findViewById<ImageView>(R.id.profilePic).setImageURI(Uri.fromFile(f))
+        }
+    }
+
+    private fun persistProfileImageFromUri(uri: Uri) {
+        val dest = File(filesDir, "profile_avatar.jpg")
+        contentResolver.openInputStream(uri)?.use { input ->
+            dest.outputStream().use { output -> input.copyTo(output) }
+        } ?: error("Could not open image")
+        AuthPreferences.setProfileImagePath(this, dest.absolutePath)
     }
 
     private fun loadProfileData() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                // TODO: Replace with real JWT
+                val token = authHeaderOrNull()
+                if (token == null) {
+                    Toast.makeText(this@ProfileActivity, "Not signed in", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
                 val response = withContext(Dispatchers.IO) {
-                    userApi.getProfile("Bearer PLACEHOLDER_TOKEN")
+                    userApi.getProfile(token)
                 }
 
-                if (response.isSuccessful && response.body() != null) {
-                    val profile = response.body()!!
+                val raw = response.body()?.string()
+                val profile = raw?.let { UserProfileJson.parse(it) }
 
+                if (response.isSuccessful && profile != null) {
                     findViewById<TextView>(R.id.username).text = profile.name
                     findViewById<TextView>(R.id.useremail).text = profile.email
-                    findViewById<TextView>(R.id.status).text = "STATUS: ${profile.status}"
-                    findViewById<TextView>(R.id.activeDevicesCount).text = "${profile.activeDevices} devices connected"
+                    findViewById<TextView>(R.id.status).text = "STATUS: ${profile.status.uppercase()}"
+                    findViewById<TextView>(R.id.activeDevicesCount).text =
+                        "${profile.activeDevices} devices connected"
                     findViewById<TextView>(R.id.lastSync).text = getLastSyncText(profile.lastLogin)
-                    
-                    // Display security level instead of biometric engine status since it's returned by the API
-                    findViewById<TextView>(R.id.biometricStatus).text = "SECURITY: ${profile.securityLevel}"
-
+                    findViewById<TextView>(R.id.biometricStatus).text = profile.status.uppercase()
+                    findViewById<TextView>(R.id.securityLevel).text = profile.securityLevel.uppercase()
                 } else {
-                    Log.e(TAG, "Failed to load profile: ${response.code()}")
+                    Log.e(TAG, "Failed to load profile: ${response.code()} body=$raw")
                     Toast.makeText(this@ProfileActivity, "Failed to load profile", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
@@ -143,9 +183,9 @@ class ProfileActivity : AppCompatActivity() {
         // Then we'll update the values. Our XML has two static devices. We will populate as many as we can fit.
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                // TODO: Replace with real JWT
+                val token = authHeaderOrNull() ?: return@launch
                 val response = withContext(Dispatchers.IO) {
-                    sessionApi.getSessions("Bearer PLACEHOLDER_TOKEN", limit = 5)
+                    sessionApi.getSessions(token, limit = 5)
                 }
 
                 if (response.isSuccessful && response.body() != null) {
@@ -172,8 +212,9 @@ class ProfileActivity : AppCompatActivity() {
             
             CoroutineScope(Dispatchers.Main).launch {
                 try {
+                    val token = authHeaderOrNull() ?: return@launch
                     val response = withContext(Dispatchers.IO) {
-                        sessionApi.logoutOtherDevices("Bearer PLACEHOLDER_TOKEN")
+                        sessionApi.logoutOtherDevices(token)
                     }
 
                     if (response.isSuccessful && response.body() != null) {
@@ -220,7 +261,7 @@ class ProfileActivity : AppCompatActivity() {
 
         signOutBtn.setOnClickListener {
             dialog.dismiss()
-            // Here you'd clear local tokens and navigate to login.
+            AuthPreferences.clear(this)
             Toast.makeText(this, "Successfully signed out", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, LoginActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -312,9 +353,15 @@ class ProfileActivity : AppCompatActivity() {
 
             CoroutineScope(Dispatchers.Main).launch {
                 try {
+                    val token = authHeaderOrNull()
+                    if (token == null) {
+                        Toast.makeText(this@ProfileActivity, "Not signed in", Toast.LENGTH_SHORT).show()
+                        deleteBtn.isEnabled = true
+                        return@launch
+                    }
                     val response = withContext(Dispatchers.IO) {
                         userApi.deleteAccount(
-                            token = "Bearer PLACEHOLDER_TOKEN",
+                            token = token,
                             request = DeleteAccountRequest(password)
                         )
                     }
@@ -322,7 +369,7 @@ class ProfileActivity : AppCompatActivity() {
                     if (response.isSuccessful) {
                         Toast.makeText(this@ProfileActivity, "Account deleted successfully", Toast.LENGTH_LONG).show()
                         dialog.dismiss()
-                        // Navigate to login
+                        AuthPreferences.clear(this@ProfileActivity)
                         startActivity(Intent(this@ProfileActivity, LoginActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                         })

@@ -100,10 +100,14 @@ class NotificationPage : AppCompatActivity() {
     private fun loadNotifications() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
+                val token = AuthPreferences.bearerOrNull(this@NotificationPage)
+                if (token == null) {
+                    Toast.makeText(this@NotificationPage, "Not signed in", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
                 val response = withContext(Dispatchers.IO) {
-                    // TODO: Replace placeholder token with real token
                     notificationApi.getNotifications(
-                        token = "Bearer PLACEHOLDER_TOKEN",
+                        token = token,
                         limit = 20
                     )
                 }
@@ -160,9 +164,10 @@ class NotificationPage : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.Main).launch {
             try {
+                val token = AuthPreferences.bearerOrNull(this@NotificationPage) ?: return@launch
                 val response = withContext(Dispatchers.IO) {
                     notificationApi.updateNotificationStatus(
-                        token = "Bearer PLACEHOLDER_TOKEN",
+                        token = token,
                         notificationId = notification.id,
                         request = NotificationStatusRequest(newStatus)
                     )
@@ -193,8 +198,9 @@ class NotificationPage : AppCompatActivity() {
     private fun markAllAsRead() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
+                val token = AuthPreferences.bearerOrNull(this@NotificationPage) ?: return@launch
                 val response = withContext(Dispatchers.IO) {
-                    notificationApi.markAllAsRead("Bearer PLACEHOLDER_TOKEN")
+                    notificationApi.markAllAsRead(token)
                 }
 
                 if (response.isSuccessful) {
