@@ -74,10 +74,9 @@ class LoginActivity : AppCompatActivity() {
     }
 
     /**
-     * Full WebAuthn login flow:
-     *  1. POST /webauthn/login/begin  → get challenge + allowCredentials
-     *  2. CredentialManager.getCredential() → user authenticates with passkey
-     *  3. POST /webauthn/login/finish → send assertion, receive JWT
+     * WebAuthn login: discoverable `login/begin` (omit `username`) so the device passkey store (e.g. Samsung Pass)
+     * can be used without the server preloading `Credentials` on `FindByEmail`.
+     * Parses wrapped `{ data: { session_token, assertion_data } }` and sends `X-Session-Token` on `login/finish`.
      */
     private fun authenticateWithPasskey(onComplete: () -> Unit) {
         CoroutineScope(Dispatchers.Main).launch {
