@@ -5,8 +5,8 @@ import android.os.Bundle
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
-import android.util.Base64
 import android.util.Log
+import android.util.Patterns
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -43,7 +43,7 @@ class LoginActivity : AppCompatActivity() {
 
         credentialManager = CredentialManager.create(this)
 
-        val etName = findViewById<EditText>(R.id.etName)
+        val etEmail = findViewById<EditText>(R.id.etName)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         val tvToRegister = findViewById<TextView>(R.id.tvToRegister)
         val registerText = "New user? Create an account"
@@ -67,15 +67,19 @@ class LoginActivity : AppCompatActivity() {
         }
 
         btnLogin.setOnClickListener {
-            val username = etName.text.toString().trim()
+            val email = etEmail.text.toString().trim()
 
-            if (username.isEmpty()) {
-                etName.error = "Username cannot be empty"
+            if (email.isEmpty()) {
+                etEmail.error = "Email is required"
+                return@setOnClickListener
+            }
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                etEmail.error = "Enter a valid email"
                 return@setOnClickListener
             }
 
             btnLogin.isEnabled = false
-            authenticateWithPasskey(username) {
+            authenticateWithPasskey(email) {
                 btnLogin.isEnabled = true
             }
         }
@@ -87,20 +91,27 @@ class LoginActivity : AppCompatActivity() {
      *  2. CredentialManager.getCredential() → user authenticates with passkey
      *  3. POST /webauthn/login/finish → send assertion, receive JWT
      */
-    private fun authenticateWithPasskey(username: String, onComplete: () -> Unit) {
+    private fun authenticateWithPasskey(email: String, onComplete: () -> Unit) {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 // ── Step 1: Begin Login ──────────────────────────────────
+                // Server binds JSON "username" to FindByEmail — must be registered email.
                 val beginResponse = withContext(Dispatchers.IO) {
-                    webAuthnApi.beginLogin(BeginLoginRequest(username))
+                    webAuthnApi.beginLogin(BeginLoginRequest(email = email))
                 }
 
                 if (!beginResponse.isSuccessful || beginResponse.body() == null) {
                     val errorBody = beginResponse.errorBody()?.string() ?: "Unknown error"
                     Log.e(TAG, "Begin login failed: ${beginResponse.code()} — $errorBody")
+                    val userMessage = when {
+                        beginResponse.code() == 401 &&
+                            errorBody.contains("User not found", ignoreCase = true) ->
+                            "No account for this email. Use the email you registered with."
+                        else -> "Login failed: $errorBody"
+                    }
                     Toast.makeText(
                         this@LoginActivity,
-                        "Login failed: $errorBody",
+                        userMessage,
                         Toast.LENGTH_LONG
                     ).show()
                     onComplete()

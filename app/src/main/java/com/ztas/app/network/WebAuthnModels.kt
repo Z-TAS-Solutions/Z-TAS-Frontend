@@ -64,8 +64,12 @@ data class VerifyOtpResponseData(
 // WebAuthn — Login (begin / finish)
 // ═══════════════════════════════════════════════════════════════
 
+/**
+ * POST `webauthn/login/begin`. JSON key remains `username` for Gin compatibility, but the server
+ * passes this value to `FindByEmail` — send the registered **email**, not display name or user id.
+ */
 data class BeginLoginRequest(
-    val username: String
+    @SerializedName("username") val email: String
 )
 
 data class BeginLoginResponse(

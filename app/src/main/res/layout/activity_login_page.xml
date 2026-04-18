@@ -58,8 +58,9 @@
                 <EditText
                     android:id="@+id/etName"
                     style="@style/CyberInputStyle"
-                    android:hint="Full Name"
-                    android:inputType="text" />
+                    android:hint="Email"
+                    android:inputType="textEmailAddress"
+                    android:autofillHints="emailAddress" />
 
                 <Button
                     android:id="@+id/btnLogin"
