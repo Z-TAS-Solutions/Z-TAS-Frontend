@@ -23,7 +23,9 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:clipToPadding="false"
         android:fillViewport="true"
+        android:overScrollMode="never"
         app:layout_constraintTop_toBottomOf="@id/btnBackVerify"
         app:layout_constraintBottom_toBottomOf="parent">
 
@@ -33,7 +35,7 @@
             android:orientation="vertical"
             android:paddingHorizontal="30dp"
             android:paddingTop="8dp"
-            android:paddingBottom="24dp">
+            android:paddingBottom="80dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -48,9 +50,40 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Enter the one-time password sent to your email."
+                android:text="Enter the 6-digit code your server sends after registration (usually by email, sometimes SMS)."
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvOtpDestination"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/ztas_cyan"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvOtpHelp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="If nothing arrives: check spam/junk, confirm the address below, and ask your team that SMTP/SMS is enabled on the API server."
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvResendOtp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:paddingVertical="6dp"
+                android:paddingHorizontal="4dp"
+                android:text="Resend code"
+                android:textColor="@color/ztas_cyan"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -70,11 +103,11 @@
                 android:background="@drawable/cyber_input_bg"
                 android:gravity="center_vertical"
                 android:hint="ENTER ONE-TIME PASSWORD"
-                android:digits="0123456789"
-                android:inputType="numberPassword"
+                android:inputType="text"
                 android:letterSpacing="0.1"
                 android:maxLength="6"
                 android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:textColor="@color/text_primary"
                 android:textColorHint="@color/text_secondary"
                 android:textSize="14sp" />
@@ -97,11 +130,11 @@
                 android:background="@drawable/cyber_input_bg"
                 android:gravity="center_vertical"
                 android:hint="RE-ENTER ONE-TIME PASSWORD"
-                android:digits="0123456789"
-                android:inputType="numberPassword"
+                android:inputType="text"
                 android:letterSpacing="0.1"
                 android:maxLength="6"
                 android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:textColor="@color/text_primary"
                 android:textColorHint="@color/text_secondary"
                 android:textSize="14sp" />

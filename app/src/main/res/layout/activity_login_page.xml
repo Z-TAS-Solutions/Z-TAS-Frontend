@@ -55,11 +55,20 @@
                     android:layout_gravity="center"
                     android:layout_marginBottom="25dp" />
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="Enter the email you registered with, then authenticate with your passkey."
+                    android:textColor="#8B9CB7"
+                    android:textSize="14sp" />
+
                 <EditText
                     android:id="@+id/etName"
                     style="@style/CyberInputStyle"
-                    android:hint="Full Name"
-                    android:inputType="text" />
+                    android:hint="Email"
+                    android:inputType="textEmailAddress"
+                    android:autofillHints="emailAddress" />
 
                 <Button
                     android:id="@+id/btnLogin"

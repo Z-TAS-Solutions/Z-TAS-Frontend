@@ -64,11 +64,15 @@
 
             <!-- Profile Picture -->
             <FrameLayout
+                android:id="@+id/profilePicFrame"
                 android:layout_width="90dp"
                 android:layout_height="90dp"
                 android:background="@drawable/circular_shapepfp"
                 android:padding="2dp"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Change profile photo">
 
                 <ImageView
                     android:id="@+id/profilePic"
@@ -85,7 +89,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/username"
-                android:text="ADAM JAMES"
+                android:text="—"
                 android:textColor="#ffffff"
                 android:textSize="22sp"
                 android:textStyle="bold"
@@ -98,7 +102,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/useremail"
-                android:text="adam201@gmail.com"
+                android:text="—"
                 android:textSize="12sp"
                 android:textColor="#8B9CB7"
                 android:layout_marginTop="8dp"
