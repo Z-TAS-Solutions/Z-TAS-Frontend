@@ -6,12 +6,18 @@ import com.google.gson.annotations.SerializedName
 // Registration
 // ═══════════════════════════════════════════════════════════════
 
+/**
+ * POST `admin/users/register/new` — mirrors `dto.UserRegistrationDetailsRequest`.
+ *
+ * [role] must be a valid `database.UserRole` string: **`Admin`** or **`Client`** (see Z-QryptGIN `model_validation.go`).
+ */
 data class RegisterRequest(
     val name: String,
     val email: String,
     val nic: String,
-    /** Must match backend JSON tag (e.g. Go `json:"phone_no"`); plain `phone` was ignored → empty Redis. */
-    @SerializedName("phone_no") val phone: String
+    @SerializedName("phone_no") val phone: String,
+    /** Default `Client` matches Go `RoleClient`; only `Admin` and `Client` pass `UserRole.Validate()`. */
+    val role: String = "Client"
 )
 
 data class RegisterResponse(
@@ -290,4 +296,190 @@ data class DeleteAccountRequest(
 
 data class DeleteAccountResponse(
     val message: String
+)
+
+// ═══════════════════════════════════════════════════════════════
+// Utility — ping
+// ═══════════════════════════════════════════════════════════════
+
+data class PingResponse(
+    val message: String,
+    val data: PingData
+)
+
+data class PingData(
+    @SerializedName("server_timestamp") val serverTimestamp: Long
+)
+
+// ═══════════════════════════════════════════════════════════════
+// Admin — dashboard
+// ═══════════════════════════════════════════════════════════════
+
+data class DashboardAnalyticsResponse(
+    val totalUsers: Int,
+    val activeSessions: Int,
+    val successRate: Double,
+    val failedRate: Double,
+    val suspiciousActivity: Int
+)
+
+data class AuthTrendsResponse(
+    val interval: String,
+    val data: List<AuthTrendPoint>
+)
+
+data class AuthTrendPoint(
+    val timestamp: String,
+    val successCount: Int,
+    val failureCount: Int
+)
+
+data class RecentAuthActivityResponse(
+    val page: Int,
+    val limit: Int,
+    val total: Int,
+    val data: List<RecentAuthActivityItem>
+)
+
+data class RecentAuthActivityItem(
+    val userId: String,
+    val device: String,
+    val method: String,
+    val status: String,
+    val timestamp: String
+)
+
+// ═══════════════════════════════════════════════════════════════
+// Admin — users
+// ═══════════════════════════════════════════════════════════════
+
+data class AdminUsersListResponse(
+    val limit: Int,
+    val offset: Int,
+    val total: Int,
+    val data: List<AdminUserRow>
+)
+
+data class AdminUserRow(
+    val userId: String,
+    val name: String,
+    val email: String,
+    val phone: String?,
+    val mfaEnabled: Boolean,
+    val lastLogin: String?,
+    val status: String
+)
+
+data class LockStatusRequest(
+    val locked: Boolean
+)
+
+data class LockStatusResponse(
+    val message: String,
+    val data: LockStatusData
+)
+
+data class LockStatusData(
+    val userId: String,
+    val locked: Boolean
+)
+
+// ═══════════════════════════════════════════════════════════════
+// Admin — devices
+// ═══════════════════════════════════════════════════════════════
+
+data class AdminDevicesEnvelope(
+    val message: String,
+    val data: AdminDevicesPayload
+)
+
+data class AdminDevicesPayload(
+    val devices: List<AdminDeviceRow>,
+    val pagination: AdminOffsetPagination
+)
+
+data class AdminDeviceRow(
+    @SerializedName("device_id") val deviceId: String,
+    @SerializedName("device_name") val deviceName: String,
+    val location: String,
+    @SerializedName("last_active") val lastActive: Long
+)
+
+data class AdminOffsetPagination(
+    val limit: Int,
+    val offset: Int,
+    val returned: Int,
+    @SerializedName("has_more") val hasMore: Boolean
+)
+
+data class AdminForceDeviceLogoutResponse(
+    val message: String,
+    val data: AdminForceDeviceLogoutData
+)
+
+data class AdminForceDeviceLogoutData(
+    @SerializedName("device_id") val deviceId: String,
+    @SerializedName("logged_out") val loggedOut: Boolean
+)
+
+// ═══════════════════════════════════════════════════════════════
+// Admin — security
+// ═══════════════════════════════════════════════════════════════
+
+data class MfaEnforcementRequest(
+    val enabled: Boolean
+)
+
+data class MfaEnforcementResponse(
+    val message: String,
+    val data: MfaEnforcementData
+)
+
+data class MfaEnforcementData(
+    val enabled: Boolean
+)
+
+// ═══════════════════════════════════════════════════════════════
+// Admin — auth logs & analytics
+// ═══════════════════════════════════════════════════════════════
+
+data class AuthLogsEnvelope(
+    val message: String,
+    val data: AuthLogsPayload
+)
+
+data class AuthLogsPayload(
+    val logs: List<AuthLogRow>,
+    val pagination: AdminOffsetPagination
+)
+
+data class AuthLogRow(
+    @SerializedName("log_id") val logId: String,
+    val timestamp: Long,
+    @SerializedName("user_name") val userName: String,
+    @SerializedName("user_id") val userId: String,
+    val status: String,
+    val location: String,
+    val device: String
+)
+
+data class AuthAnalyticsEnvelope(
+    val message: String,
+    val data: AuthAnalyticsPayload
+)
+
+data class AuthAnalyticsPayload(
+    @SerializedName("time_range") val timeRange: AuthAnalyticsTimeRange,
+    val metrics: AuthAnalyticsMetrics
+)
+
+data class AuthAnalyticsTimeRange(
+    val from: Long,
+    val to: Long
+)
+
+data class AuthAnalyticsMetrics(
+    @SerializedName("successful_logins") val successfulLogins: Int,
+    @SerializedName("failed_logins") val failedLogins: Int,
+    @SerializedName("suspicious_activities") val suspiciousActivities: Int
 )
