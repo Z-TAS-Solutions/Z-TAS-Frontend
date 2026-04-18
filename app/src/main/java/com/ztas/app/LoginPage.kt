@@ -6,9 +6,7 @@ import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.util.Log
-import android.util.Patterns
 import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -43,7 +41,6 @@ class LoginActivity : AppCompatActivity() {
 
         credentialManager = CredentialManager.create(this)
 
-        val etEmail = findViewById<EditText>(R.id.etName)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         val tvToRegister = findViewById<TextView>(R.id.tvToRegister)
         val registerText = "New user? Create an account"
@@ -67,19 +64,10 @@ class LoginActivity : AppCompatActivity() {
         }
 
         btnLogin.setOnClickListener {
-            val email = etEmail.text.toString().trim()
-
-            if (email.isEmpty()) {
-                etEmail.error = "Email is required"
-                return@setOnClickListener
-            }
-            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                etEmail.error = "Enter a valid email"
-                return@setOnClickListener
-            }
-
             btnLogin.isEnabled = false
-            authenticateWithPasskey(email) {
+            // Discoverable begin: omit username so server uses BeginDiscoverableLogin (works with
+            // Samsung Pass even when FindByEmail does not Preload Credentials — see Z-QryptGIN user_repo).
+            authenticateWithPasskey {
                 btnLogin.isEnabled = true
             }
         }
@@ -91,13 +79,12 @@ class LoginActivity : AppCompatActivity() {
      *  2. CredentialManager.getCredential() → user authenticates with passkey
      *  3. POST /webauthn/login/finish → send assertion, receive JWT
      */
-    private fun authenticateWithPasskey(email: String, onComplete: () -> Unit) {
+    private fun authenticateWithPasskey(onComplete: () -> Unit) {
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                // ── Step 1: Begin Login ──────────────────────────────────
-                // Server binds JSON "username" to FindByEmail — must be registered email.
+                // ── Step 1: Begin Login (discoverable) ─────────────────────
                 val beginResponse = withContext(Dispatchers.IO) {
-                    webAuthnApi.beginLogin(BeginLoginRequest(email = email))
+                    webAuthnApi.beginLogin(BeginLoginRequest())
                 }
 
                 if (!beginResponse.isSuccessful || beginResponse.body() == null) {
@@ -107,6 +94,9 @@ class LoginActivity : AppCompatActivity() {
                         beginResponse.code() == 401 &&
                             errorBody.contains("User not found", ignoreCase = true) ->
                             "No account for this email. Use the email you registered with."
+                        errorBody.contains("Found no credentials", ignoreCase = true) ||
+                            errorBody.contains("no credentials for user", ignoreCase = true) ->
+                            "No passkey for this account yet. Finish sign-up: verify email, then complete passkey setup before logging in."
                         else -> "Login failed: $errorBody"
                     }
                     Toast.makeText(
@@ -118,10 +108,21 @@ class LoginActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                val beginBody = beginResponse.body()!!
+                val beginJson = beginResponse.body()!!.string()
+                val parsedBegin = parseLoginBeginPayload(beginJson)
+                if (parsedBegin == null) {
+                    Log.e(TAG, "Could not parse login/begin JSON: $beginJson")
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Login failed: unexpected server response",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    onComplete()
+                    return@launch
+                }
 
                 // Build the JSON that Android's CredentialManager expects
-                val requestJson = buildGetCredentialJson(beginBody)
+                val requestJson = buildGetCredentialJson(parsedBegin)
                 Log.d(TAG, "CredentialManager request JSON: $requestJson")
 
                 // ── Step 2: CredentialManager — user taps fingerprint / face ─
@@ -161,7 +162,10 @@ class LoginActivity : AppCompatActivity() {
                 )
 
                 val finishResponse = withContext(Dispatchers.IO) {
-                    webAuthnApi.finishLogin(finishRequest)
+                    webAuthnApi.finishLogin(
+                        sessionToken = parsedBegin.sessionToken,
+                        request = finishRequest
+                    )
                 }
 
                 if (!finishResponse.isSuccessful || finishResponse.body() == null) {
@@ -176,8 +180,19 @@ class LoginActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                val finishBody = finishResponse.body()!!
-                Log.d(TAG, "Login success — userId=${finishBody.userId}, role=${finishBody.role}")
+                val finishJson = finishResponse.body()!!.string()
+                val finishData = parseLoginFinishPayload(finishJson)
+                if (finishData == null) {
+                    Log.e(TAG, "Could not parse login/finish JSON: $finishJson")
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Login failed: unexpected server response",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    onComplete()
+                    return@launch
+                }
+                Log.d(TAG, "Login success — userId=${finishData.userId}, role=${finishData.role}")
 
                 // TODO: Persist finishBody.token securely (e.g. EncryptedSharedPreferences)
 
@@ -208,27 +223,82 @@ class LoginActivity : AppCompatActivity() {
     }
 
     /**
-     * Converts the [BeginLoginResponse] into the JSON format expected by
-     * [GetPublicKeyCredentialOption].
+     * Converts Z-QryptGIN `login/begin` assertion options into the JSON [GetPublicKeyCredentialOption] expects.
      */
-    private fun buildGetCredentialJson(
-        begin: com.ztas.app.network.BeginLoginResponse
-    ): String {
+    private fun buildGetCredentialJson(begin: ParsedLoginBegin): String {
         val json = JSONObject()
         json.put("challenge", begin.challenge)
         json.put("rpId", begin.rpId)
         json.put("timeout", begin.timeout)
         json.put("userVerification", begin.userVerification)
-
-        val allowCreds = JSONArray()
-        for (cred in begin.allowCredentials) {
-            val obj = JSONObject()
-            obj.put("id", cred.id)
-            obj.put("type", cred.type)
-            allowCreds.put(obj)
-        }
-        json.put("allowCredentials", allowCreds)
-
+        json.put("allowCredentials", begin.allowCredentials)
         return json.toString()
+    }
+
+    private data class ParsedLoginBegin(
+        val sessionToken: String,
+        val challenge: String,
+        val rpId: String,
+        val timeout: Long,
+        val userVerification: String,
+        val allowCredentials: JSONArray
+    )
+
+    private data class ParsedLoginFinish(
+        val token: String,
+        val userId: String,
+        val role: String
+    )
+
+    /** Gin wraps `session_token` + `assertion_data` under `data` (see Z-QryptGIN `WebAuthnHandler.LoginBegin`). */
+    private fun parseLoginBeginPayload(raw: String): ParsedLoginBegin? {
+        return try {
+            val root = JSONObject(raw)
+            val data = root.optJSONObject("data") ?: return null
+            val sessionToken = data.optString("session_token").ifEmpty { data.optString("sessionToken") }
+            if (sessionToken.isEmpty()) return null
+            val assertion = data.optJSONObject("assertion_data")
+                ?: data.optJSONObject("assertionData")
+                ?: return null
+            val options = assertion.optJSONObject("response") ?: assertion
+            val challenge = options.optString("challenge").ifEmpty { options.optString("Challenge") }
+            if (challenge.isEmpty()) return null
+            val rpId = options.optString("rpId").ifEmpty { options.optString("rp_id") }
+            if (rpId.isEmpty()) return null
+            val timeout = when {
+                options.has("timeout") && !options.isNull("timeout") ->
+                    options.optLong("timeout", 120_000L).takeIf { it > 0 }
+                        ?: options.optInt("timeout", 120_000).toLong()
+                else -> 120_000L
+            }
+            val uv = options.optString("userVerification").ifEmpty {
+                options.optString("user_verification")
+            }.ifEmpty { "required" }
+            val allow = options.optJSONArray("allowCredentials")
+                ?: options.optJSONArray("allow_credentials")
+                ?: JSONArray()
+            ParsedLoginBegin(sessionToken, challenge, rpId, timeout, uv, allow)
+        } catch (e: Exception) {
+            Log.e(TAG, "parseLoginBeginPayload", e)
+            null
+        }
+    }
+
+    private fun parseLoginFinishPayload(raw: String): ParsedLoginFinish? {
+        return try {
+            val root = JSONObject(raw)
+            val data = root.optJSONObject("data") ?: root
+            val token = data.optString("token").ifEmpty { return null }
+            val userId = when {
+                data.has("user_id") && !data.isNull("user_id") && data.get("user_id") is Number ->
+                    data.getLong("user_id").toString()
+                else -> data.optString("user_id").ifEmpty { data.optString("userId") }
+            }
+            val role = data.optString("role").ifEmpty { "Client" }
+            ParsedLoginFinish(token, userId, role)
+        } catch (e: Exception) {
+            Log.e(TAG, "parseLoginFinishPayload", e)
+            null
+        }
     }
 }

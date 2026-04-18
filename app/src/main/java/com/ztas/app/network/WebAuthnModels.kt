@@ -65,19 +65,16 @@ data class VerifyOtpResponseData(
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * POST `webauthn/login/begin`. JSON key remains `username` for Gin compatibility, but the server
- * passes this value to `FindByEmail` — send the registered **email**, not display name or user id.
+ * POST `webauthn/login/begin`.
+ *
+ * - **`username` omitted or null** → Gin receives empty `Username` → server runs **discoverable**
+ *   login (`BeginDiscoverableLogin`). Use this when the passkey lives on the device (e.g. Samsung Pass).
+ * - **`username` set** → server uses `FindByEmail(username)` then `BeginLogin(user)`; that path
+ *   requires the API repo to **Preload("Credentials")** on the user, otherwise you get
+ *   "Found no credentials for user" even when credentials exist in the DB.
  */
 data class BeginLoginRequest(
-    @SerializedName("username") val email: String
-)
-
-data class BeginLoginResponse(
-    val challenge: String,
-    @SerializedName(value = "rp_id", alternate = ["rpId"]) val rpId: String,
-    @SerializedName(value = "allow_credentials", alternate = ["allowCredentials"]) val allowCredentials: List<AllowCredential>,
-    val timeout: Long,
-    @SerializedName(value = "user_verification", alternate = ["userVerification"]) val userVerification: String
+    @SerializedName("username") val email: String? = null
 )
 
 data class AllowCredential(
@@ -97,12 +94,6 @@ data class AssertionResponseBody(
     val clientDataJSON: String,
     val signature: String,
     val userHandle: String
-)
-
-data class FinishLoginResponse(
-    val token: String,
-    @SerializedName(value = "user_id", alternate = ["userId"]) val userId: String,
-    val role: String
 )
 
 // ═══════════════════════════════════════════════════════════════
