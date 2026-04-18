@@ -4,93 +4,84 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#070B14"> <ScrollView
-    android:layout_width="0dp"
-    android:layout_height="0dp"
-    android:fillViewport="true"
-    app:layout_constraintTop_toTopOf="parent"
-    app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent">
+    android:background="#070B14">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:padding="30dp">
-
-        <ImageView
-            android:id="@+id/logo"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:layout_marginTop="20dp"
-            android:src="@drawable/logo_ztas" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Z-TAS"
-            android:textColor="#FFFFFF"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.1"/>
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="25dp"
-            android:background="@drawable/register_card_bg"
+            android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="30dp">
+
+            <ImageView
+                android:id="@+id/logo"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginTop="20dp"
+                android:src="@drawable/z_taslogo" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="LOG IN"
+                android:text="Z-TAS"
                 android:textColor="#FFFFFF"
-                android:textSize="22sp"
-                android:layout_gravity="center"
-                android:layout_marginBottom="25dp" />
-
-            <EditText
-                android:id="@+id/etLoginEmail"
-                style="@style/CyberInputStyle"
-                android:hint="E-mail"
-                 />
-
-            <EditText
-                android:id="@+id/etLoginPass"
-                style="@style/CyberInputStyle"
-                android:hint="Password"
-                android:inputType="textPassword"
-                />
-
-            <Button
-                android:id="@+id/btnLogin"
-                android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/neon_button_bg"
-                android:text="LOG IN"
-                android:textColor="#FFFFFF"
+                android:textSize="28sp"
                 android:textStyle="bold"
-                app:backgroundTint="@null" />
+                android:letterSpacing="0.1"/>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="25dp"
+                android:background="@drawable/register_card_bg"
+                android:orientation="vertical"
+                android:padding="20dp">
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="LOG IN"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"
+                    android:layout_gravity="center"
+                    android:layout_marginBottom="25dp" />
 
+                <EditText
+                    android:id="@+id/etName"
+                    style="@style/CyberInputStyle"
+                    android:hint="Full Name"
+                    android:inputType="text" />
 
+                <Button
+                    android:id="@+id/btnLogin"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:layout_marginTop="18dp"
+                    android:background="@drawable/neon_button_bg"
+                    android:text="LOGIN WITH PASSKEY"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    app:backgroundTint="@null" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvToRegister"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="25dp"
+                android:text="New user? Create an account"
+                android:textColor="#80FFFFFF" />
 
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/tvToRegister"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="25dp"
-            android:text="New user? Create an account"
-            android:textColor="#80FFFFFF" />
-
-    </LinearLayout>
-</ScrollView>
+    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

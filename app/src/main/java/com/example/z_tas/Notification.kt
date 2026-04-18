@@ -9,7 +9,7 @@ enum class NotificationType {
 }
 
 data class Notification(
-    val id: Int,
+    val id: String,
     val title: String,
     val message: String,
     val time: String,

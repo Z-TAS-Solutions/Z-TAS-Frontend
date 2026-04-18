@@ -1,12 +1,24 @@
 package com.example.z_tas
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import com.example.z_tas.network.NotificationData
+import com.example.z_tas.network.NotificationStatusRequest
+import com.example.z_tas.network.RetrofitClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class NotificationPage : AppCompatActivity() {
 
@@ -16,8 +28,13 @@ class NotificationPage : AppCompatActivity() {
     private lateinit var tabAll: TextView
     private lateinit var tabUnread: TextView
 
+    private val notificationApi = RetrofitClient.notificationApi
     private var allNotifications = mutableListOf<Notification>()
     private var currentFilter = FilterType.ALL
+
+    companion object {
+        private const val TAG = "NotificationPage"
+    }
 
     enum class FilterType {
         ALL, UNREAD
@@ -33,16 +50,30 @@ class NotificationPage : AppCompatActivity() {
         tabAll = findViewById(R.id.tabAll)
         tabUnread = findViewById(R.id.tabUnread)
         val btnMarkAllRead = findViewById<TextView>(R.id.btnMarkAllRead)
+        val backArrow = findViewById<ImageView>(android.widget.ImageView::class.java.cast(findViewById(R.id.backArrow))?.id ?: R.id.backArrow)
+        // Wait, I can just do:
+        findViewById<android.widget.ImageView>(R.id.backArrow)?.setOnClickListener {
+            finish()
+        }
+
+        // Setup Bottom Nav Bar
+        val composeView = findViewById<ComposeView>(R.id.compose_bottom_nav)
+        composeView.apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                ZtasNavBar(selectedIndex = 2)
+            }
+        }
 
         // Setup RecyclerView
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = NotificationAdapter(allNotifications) { notification ->
-            // Handle notification click
-            markAsRead(notification)
+            // Handle notification click — toggle read/unread via API
+            toggleNotificationStatus(notification)
         }
         recyclerView.adapter = adapter
 
-        // Load sample notifications
+        // Load notifications from API
         loadNotifications()
 
         // Tab click listeners
@@ -54,7 +85,7 @@ class NotificationPage : AppCompatActivity() {
             selectTab(FilterType.UNREAD)
         }
 
-        // Mark all as read
+        // Mark all as read via API
         btnMarkAllRead.setOnClickListener {
             markAllAsRead()
         }
@@ -63,52 +94,35 @@ class NotificationPage : AppCompatActivity() {
         selectTab(FilterType.ALL)
     }
 
+    /**
+     * Fetches notifications from GET /user/notifications
+     */
     private fun loadNotifications() {
-        allNotifications.clear()
-        allNotifications.addAll(
-            listOf(
-                Notification(
-                    id = 1,
-                    title = "MFA REQUIRED",
-                    message = "Please complete MFA to proceed with payment.",
-                    time = "5 mins ago",
-                    type = NotificationType.SECURITY,
-                    isRead = false
-                ),
-                Notification(
-                    id = 2,
-                    title = "MFA CODE SENT",
-                    message = "A verification code was sent to your number ending 765.",
-                    time = "5 mins ago",
-                    type = NotificationType.INFO,
-                    isRead = false
-                ),
-                Notification(
-                    id = 3,
-                    title = "IDENTITY VERIFIED",
-                    message = "Your identity was verified and approved.",
-                    time = "4 hrs ago",
-                    type = NotificationType.SUCCESS,
-                    isRead = true
-                ),
-                Notification(
-                    id = 4,
-                    title = "MFA FAILED",
-                    message = "Incorrect code entered. Access blocked.",
-                    time = "21 hrs ago",
-                    type = NotificationType.ERROR,
-                    isRead = true
-                ),
-                Notification(
-                    id = 5,
-                    title = "ACCESS DENIED",
-                    message = "Your authentication did not meet security requirements.",
-                    time = "1 day ago",
-                    type = NotificationType.WARNING,
-                    isRead = true
-                )
-            )
-        )
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    // TODO: Replace placeholder token with real token
+                    notificationApi.getNotifications(
+                        token = "Bearer PLACEHOLDER_TOKEN",
+                        limit = 20
+                    )
+                }
+
+                if (response.isSuccessful && response.body() != null) {
+                    val apiNotifications = response.body()!!.notifications
+                    allNotifications.clear()
+                    allNotifications.addAll(apiNotifications.map { it.toLocalNotification() })
+                    selectTab(currentFilter)
+                    updateUnreadCount()
+                } else {
+                    Log.e(TAG, "Load notifications failed: ${response.code()}")
+                    Toast.makeText(this@NotificationPage, "Failed to load notifications", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Load notifications error", e)
+                Toast.makeText(this@NotificationPage, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun selectTab(filter: FilterType) {
@@ -137,22 +151,69 @@ class NotificationPage : AppCompatActivity() {
         updateEmptyState()
     }
 
-    private fun markAsRead(notification: Notification) {
-        val index = allNotifications.indexOfFirst { it.id == notification.id }
-        if (index != -1) {
-            allNotifications[index].isRead = true
-            adapter.notifyItemChanged(index)
-            updateUnreadCount()
+    /**
+     * Toggles a notification's status via PATCH /user/notifications/{id}/status.
+     * If unread → marks as read. If read → marks as unread.
+     */
+    private fun toggleNotificationStatus(notification: Notification) {
+        val newStatus = if (notification.isRead) "unread" else "read"
+
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    notificationApi.updateNotificationStatus(
+                        token = "Bearer PLACEHOLDER_TOKEN",
+                        notificationId = notification.id,
+                        request = NotificationStatusRequest(newStatus)
+                    )
+                }
+
+                if (response.isSuccessful) {
+                    val index = allNotifications.indexOfFirst { it.id == notification.id }
+                    if (index != -1) {
+                        allNotifications[index].isRead = newStatus == "read"
+                        selectTab(currentFilter)
+                        updateUnreadCount()
+                    }
+                    Log.d(TAG, "Notification ${notification.id} marked as $newStatus")
+                } else {
+                    Log.e(TAG, "Mark notification failed: ${response.code()}")
+                    Toast.makeText(this@NotificationPage, "Failed to update", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Mark notification error", e)
+                Toast.makeText(this@NotificationPage, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
+    /**
+     * Marks all notifications as read via PATCH /user/notifications/read-all.
+     */
     private fun markAllAsRead() {
-        allNotifications.forEach { it.isRead = true }
-        adapter.notifyDataSetChanged()
-        updateUnreadCount()
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    notificationApi.markAllAsRead("Bearer PLACEHOLDER_TOKEN")
+                }
 
-        if (currentFilter == FilterType.UNREAD) {
-            selectTab(FilterType.UNREAD)
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    Log.d(TAG, "Marked all as read: ${body?.data?.updatedCount} updated")
+
+                    allNotifications.forEach { it.isRead = true }
+                    selectTab(currentFilter)
+                    updateUnreadCount()
+
+                    Toast.makeText(this@NotificationPage, "All marked as read", Toast.LENGTH_SHORT).show()
+                } else {
+                    Log.e(TAG, "Mark all read failed: ${response.code()}")
+                    Toast.makeText(this@NotificationPage, "Failed to mark all as read", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Mark all read error", e)
+                Toast.makeText(this@NotificationPage, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -166,5 +227,40 @@ class NotificationPage : AppCompatActivity() {
         val isEmpty = adapter.itemCount == 0
         emptyState.visibility = if (isEmpty) View.VISIBLE else View.GONE
         recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
+    }
+
+    /**
+     * Maps API [NotificationData] → local [Notification] model.
+     */
+    private fun NotificationData.toLocalNotification(): Notification {
+        val titleUpper = title.uppercase()
+        val type = when {
+            "FAIL" in titleUpper || "ERROR" in titleUpper -> NotificationType.ERROR
+            "BLOCK" in titleUpper || "DENIED" in titleUpper -> NotificationType.WARNING
+            "SUCCESS" in titleUpper || "VERIFIED" in titleUpper -> NotificationType.SUCCESS
+            "SECURITY" in titleUpper -> NotificationType.SECURITY
+            else -> NotificationType.INFO
+        }
+
+        val now = System.currentTimeMillis()
+        val diffMs = now - timestamp
+        val diffMin = diffMs / (1000 * 60)
+        val diffHour = diffMs / (1000 * 60 * 60)
+        val diffDay = diffMs / (1000 * 60 * 60 * 24)
+        val timeStr = when {
+            diffMin < 1 -> "Just now"
+            diffMin < 60 -> "${diffMin}m ago"
+            diffHour < 24 -> "${diffHour} hrs ago"
+            else -> "${diffDay} day${if (diffDay > 1) "s" else ""} ago"
+        }
+
+        return Notification(
+            id = notificationId ?: "",
+            title = title.uppercase(),
+            message = details,
+            time = timeStr,
+            type = type,
+            isRead = status == "read"
+        )
     }
 }
