@@ -20,92 +20,119 @@
         app:layout_constraintTop_toTopOf="parent"
         app:tint="@color/ztas_cyan" />
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:orientation="vertical"
-        android:paddingHorizontal="30dp"
-        android:paddingTop="8dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never"
         app:layout_constraintTop_toBottomOf="@id/btnBackVerify"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="Verify Your Email"
-            android:textColor="@color/text_primary"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Enter the one-time password sent to your email."
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:letterSpacing="0.15"
-            android:text="ONE-TIME PASSWORD"
-            android:textColor="@color/ztas_cyan"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etOtpPassword"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/cyber_input_bg"
-            android:gravity="center_vertical"
-            android:hint="ENTER ONE-TIME PASSWORD"
-            android:inputType="textPassword"
-            android:letterSpacing="0.1"
-            android:paddingStart="16dp"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_secondary"
-            android:textSize="14sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:letterSpacing="0.15"
-            android:text="RE-ENTER ONE-TIME PASSWORD"
-            android:textColor="@color/ztas_cyan"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:paddingHorizontal="30dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="80dp">
 
-        <EditText
-            android:id="@+id/etOtpConfirm"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/cyber_input_bg"
-            android:gravity="center_vertical"
-            android:hint="RE-ENTER ONE-TIME PASSWORD"
-            android:inputType="textPassword"
-            android:letterSpacing="0.1"
-            android:paddingStart="16dp"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_secondary"
-            android:textSize="14sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Verify Your Email"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/btnContinue"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:layout_marginTop="32dp"
-            android:background="@drawable/neon_button_bg"
-            android:text="CONTINUE"
-            android:textColor="@color/text_primary"
-            android:textStyle="bold"
-            app:backgroundTint="@null" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Enter the one-time password sent to your email."
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
 
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:letterSpacing="0.15"
+                android:text="ONE-TIME PASSWORD"
+                android:textColor="@color/ztas_cyan"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etOtpPassword"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/cyber_input_bg"
+                android:gravity="center_vertical"
+                android:hint="ENTER ONE-TIME PASSWORD"
+                android:inputType="text"
+                android:letterSpacing="0.1"
+                android:maxLength="6"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:letterSpacing="0.15"
+                android:text="RE-ENTER ONE-TIME PASSWORD"
+                android:textColor="@color/ztas_cyan"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etOtpConfirm"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/cyber_input_bg"
+                android:gravity="center_vertical"
+                android:hint="RE-ENTER ONE-TIME PASSWORD"
+                android:inputType="text"
+                android:letterSpacing="0.1"
+                android:maxLength="6"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/btnContinue"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:layout_marginTop="32dp"
+                android:background="@drawable/neon_button_bg"
+                android:text="CONTINUE"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                app:backgroundTint="@null" />
+
+            <TextView
+                android:id="@+id/tvResendOtp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="14dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:paddingVertical="8dp"
+                android:paddingHorizontal="12dp"
+                android:text="Resend code"
+                android:textColor="@color/ztas_cyan"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>
