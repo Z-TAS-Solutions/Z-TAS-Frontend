@@ -106,7 +106,11 @@ class LoginActivity : AppCompatActivity() {
                             role = finishData.role
                         )
                         if (finishData.displayName.isNotBlank()) {
-                            AuthPreferences.setCachedDisplayName(this@LoginActivity, finishData.displayName)
+                            AuthPreferences.setCachedDisplayName(
+                                this@LoginActivity,
+                                finishData.displayName,
+                                emailForCheck = finishData.email
+                            )
                         }
 
                         runCatching {
@@ -119,7 +123,11 @@ class LoginActivity : AppCompatActivity() {
                                 val profileEmail = profile.email.ifBlank { finishData.email }
                                 val nm = profile.name.trim()
                                 if (nm.isNotEmpty() && !DisplayNameHints.isEmailLocalHandle(nm, profileEmail)) {
-                                    AuthPreferences.setCachedDisplayName(this@LoginActivity, nm)
+                                    AuthPreferences.setCachedDisplayName(
+                                        this@LoginActivity,
+                                        nm,
+                                        emailForCheck = profileEmail
+                                    )
                                 }
                             }
                         }.onFailure { Log.w(TAG, "Profile fetch after login (display name cache)", it) }

@@ -41,7 +41,7 @@ object ProfileDisplayName {
     fun persistIfRichLabel(context: Context, resolved: String, emailForCheck: String) {
         if (resolved.isBlank()) return
         if (!DisplayNameHints.isEmailLocalHandle(resolved, emailForCheck)) {
-            AuthPreferences.setCachedDisplayName(context, resolved.trim())
+            AuthPreferences.setCachedDisplayName(context, resolved.trim(), emailForCheck = emailForCheck)
         }
     }
 }

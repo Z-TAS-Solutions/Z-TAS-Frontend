@@ -47,11 +47,45 @@ object AuthPreferences {
     fun cachedDisplayName(context: Context): String =
         prefs(context).getString(KEY_DISPLAY_NAME, "").orEmpty()
 
-    fun setCachedDisplayName(context: Context, value: String?) {
+    /**
+     * Persists the user's full name. The optional [emailForCheck] guards against accidentally
+     * storing the email's local-part (e.g. `alishamohamed7864`) as the "real" name — which
+     * happens when downstream code falls back to a server's WebAuthn `user.displayName`.
+     * When [emailForCheck] is provided and [value] looks like that handle, we ignore the write
+     * (and clear any existing matching value so old corrupt cache self-heals).
+     */
+    fun setCachedDisplayName(context: Context, value: String?, emailForCheck: String? = null) {
         val e = prefs(context).edit()
-        if (value.isNullOrBlank()) e.remove(KEY_DISPLAY_NAME)
-        else e.putString(KEY_DISPLAY_NAME, value.trim())
-        e.apply()
+        val trimmed = value?.trim().orEmpty()
+        if (trimmed.isEmpty()) {
+            e.remove(KEY_DISPLAY_NAME).apply()
+            return
+        }
+        val email = emailForCheck?.trim().orEmpty().ifEmpty { cachedEmail(context) }
+        if (email.isNotEmpty() && DisplayNameHints.isEmailLocalHandle(trimmed, email)) {
+            // Looks like the email handle, not a real full name. Discard it
+            // and remove anything stale that already matched it.
+            val current = prefs(context).getString(KEY_DISPLAY_NAME, "").orEmpty().trim()
+            if (current.isNotEmpty() && DisplayNameHints.isEmailLocalHandle(current, email)) {
+                e.remove(KEY_DISPLAY_NAME).apply()
+            }
+            return
+        }
+        e.putString(KEY_DISPLAY_NAME, trimmed).apply()
+    }
+
+    /**
+     * Drops a previously-cached display name when it turns out to just be the email's
+     * local-part. Safe to call on every app launch or screen entry — it's a no-op for
+     * good values.
+     */
+    fun clearCachedDisplayNameIfEmailHandle(context: Context) {
+        val current = prefs(context).getString(KEY_DISPLAY_NAME, "").orEmpty().trim()
+        if (current.isEmpty()) return
+        val email = cachedEmail(context)
+        if (email.isNotBlank() && DisplayNameHints.isEmailLocalHandle(current, email)) {
+            prefs(context).edit().remove(KEY_DISPLAY_NAME).apply()
+        }
     }
 
     fun cachedUserId(context: Context): String =

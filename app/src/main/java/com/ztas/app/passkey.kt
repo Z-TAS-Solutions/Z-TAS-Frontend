@@ -52,7 +52,7 @@ class PasskeyActivity : AppCompatActivity() {
         userPhone = intent.getStringExtra("USER_PHONE") ?: ""
         userDisplayName = intent.getStringExtra("USER_DISPLAY_NAME")?.trim().orEmpty()
         if (userDisplayName.isNotBlank()) {
-            AuthPreferences.setCachedDisplayName(this, userDisplayName)
+            AuthPreferences.setCachedDisplayName(this, userDisplayName, emailForCheck = userEmail)
         }
         if (userId.isEmpty()) {
             Log.w(TAG, "No USER_ID received — passkey registration will fail")
@@ -153,10 +153,17 @@ class PasskeyActivity : AppCompatActivity() {
                 }
 
                 val beginBody = beginResponse.body()!!
-                if (userDisplayName.isBlank()) {
+                // Only consult the server's WebAuthn user.displayName when we have *nothing*
+                // cached locally. Even then, [setCachedDisplayName] will reject an email-handle.
+                val cachedDn = AuthPreferences.cachedDisplayName(this@PasskeyActivity).trim()
+                if (userDisplayName.isBlank() && cachedDn.isBlank()) {
                     val fromServer = displayNameFromBeginResponse(beginBody)
                     if (fromServer.isNotBlank()) {
-                        AuthPreferences.setCachedDisplayName(this@PasskeyActivity, fromServer)
+                        AuthPreferences.setCachedDisplayName(
+                            this@PasskeyActivity,
+                            fromServer,
+                            emailForCheck = userEmail
+                        )
                     }
                 }
                 val sessionToken = beginBody.data?.sessionToken.orEmpty()

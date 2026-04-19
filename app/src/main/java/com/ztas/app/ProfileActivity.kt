@@ -91,6 +91,11 @@ class ProfileActivity : AppCompatActivity() {
             pickProfileImage.launch("image/*")
         }
 
+        // Drop any previously-cached display name that turned out to be just the
+        // email handle (e.g. left over from older builds) so applyCachedIdentity()
+        // can fall back cleanly and a real name from /user/profile can replace it.
+        AuthPreferences.clearCachedDisplayNameIfEmailHandle(this)
+
         applySavedProfilePhoto()
         applyCachedIdentity()
         loadProfileData()
