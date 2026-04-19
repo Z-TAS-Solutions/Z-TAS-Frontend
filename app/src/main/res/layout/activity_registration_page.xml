@@ -94,7 +94,7 @@
             <EditText
                 android:id="@+id/etNIC"
                 style="@style/CyberInputStyle"
-                android:hint="NIC: 123456789V or 12-digit new NIC"
+                android:hint="NIC"
                 android:importantForAutofill="yes"
                 android:inputType="textCapCharacters" />
 
