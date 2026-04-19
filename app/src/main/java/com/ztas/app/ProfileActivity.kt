@@ -375,11 +375,10 @@ class ProfileActivity : AppCompatActivity() {
                             val response = withContext(Dispatchers.IO) {
                                 val req = DeleteAccountRequest("")
                                 val del = userApi.deleteAccountDelete(token = bearer, request = req)
-                                if (del.code() == 404) {
-                                    userApi.deleteAccountPost(token = bearer, request = req)
-                                } else {
-                                    del
-                                }
+                                if (del.code() != 404) return@withContext del
+                                val post = userApi.deleteAccountPost(token = bearer, request = req)
+                                // If both are 404, keep POST response (latest) but log both upstream.
+                                post
                             }
                             if (response.isSuccessful) {
                                 Toast.makeText(this@ProfileActivity, "Account deleted successfully", Toast.LENGTH_LONG).show()
@@ -391,8 +390,14 @@ class ProfileActivity : AppCompatActivity() {
                                 finish()
                             } else {
                                 val errorBody = runCatching { response.errorBody()?.string().orEmpty() }.getOrDefault("")
-                                Log.e(TAG, "Delete account failed: ${response.code()} - $errorBody")
+                                Log.e(
+                                    TAG,
+                                    "Delete account failed. Tried: DELETE user/account/delete then POST user/account/delete. " +
+                                        "Final status=${response.code()} body=$errorBody"
+                                )
                                 val message = when {
+                                    response.code() == 404 ->
+                                        "Delete failed: backend route not found (tried DELETE+POST `user/account/delete`)."
                                     errorBody.contains("password", ignoreCase = true) ->
                                         "Delete failed: backend still requires password confirmation."
                                     errorBody.contains("unauthorized", ignoreCase = true) ||
