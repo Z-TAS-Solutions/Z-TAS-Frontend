@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "346272999531",
-    "project_id": "z-tas-7f802",
-    "storage_bucket": "z-tas-7f802.firebasestorage.app"
+    "project_number": "291918463890",
+    "project_id": "z-tas-900e9",
+    "storage_bucket": "z-tas-900e9.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:346272999531:android:a51c266812b46079e4e92e",
+        "mobilesdk_app_id": "1:291918463890:android:6a68d7e6387108547cb74b",
         "android_client_info": {
           "package_name": "com.example.z_tas"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCIST9qigbcHPh3Invs3PKpLnjf5kcudi8"
+          "current_key": "AIzaSyADXAZ--B5Drn2ZolCiXjkt_ClOzekiNR4"
         }
       ],
       "services": {
