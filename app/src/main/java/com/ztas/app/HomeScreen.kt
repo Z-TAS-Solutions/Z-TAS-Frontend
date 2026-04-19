@@ -96,8 +96,8 @@ fun HomeScreen() {
                 val response = withContext(Dispatchers.IO) {
                     RetrofitClient.sessionApi.getSessions(bearer, limit = 20)
                 }
-                if (response.isSuccessful && response.body() != null) {
-                    sessions = response.body()!!.sessions
+                if (response.isSuccessful) {
+                    sessions = response.body()?.data?.sessions.orEmpty()
                 } else {
                     sessionsError = "Failed to load sessions"
                     Log.e("HomeScreen", "Sessions error: ${response.code()}")
@@ -119,8 +119,9 @@ fun HomeScreen() {
                         limit = 5
                     )
                 }
-                if (notifResponse.isSuccessful && notifResponse.body() != null) {
-                    activities = notifResponse.body()!!.notifications.map { it.toActivityItem() }
+                if (notifResponse.isSuccessful) {
+                    activities =
+                        notifResponse.body()?.data?.notifications.orEmpty().map { it.toActivityItem() }
                 } else {
                     Log.e("HomeScreen", "Notifications error: ${notifResponse.code()}")
                 }

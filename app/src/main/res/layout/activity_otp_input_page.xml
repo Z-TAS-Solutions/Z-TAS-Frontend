@@ -50,40 +50,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Enter the 6-digit code your server sends after registration (usually by email, sometimes SMS)."
+                android:text="Enter the one-time password sent to your email."
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/tvOtpDestination"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:textColor="@color/ztas_cyan"
-                android:textSize="13sp"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/tvOtpHelp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="If nothing arrives: check spam/junk, confirm the address below, and ask your team that SMTP/SMS is enabled on the API server."
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
-
-            <TextView
-                android:id="@+id/tvResendOtp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:paddingVertical="6dp"
-                android:paddingHorizontal="4dp"
-                android:text="Resend code"
-                android:textColor="@color/ztas_cyan"
-                android:textSize="13sp"
-                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -149,6 +118,20 @@
                 android:textColor="@color/text_primary"
                 android:textStyle="bold"
                 app:backgroundTint="@null" />
+
+            <TextView
+                android:id="@+id/tvResendOtp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="14dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:paddingVertical="8dp"
+                android:paddingHorizontal="12dp"
+                android:text="Resend code"
+                android:textColor="@color/ztas_cyan"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
         </LinearLayout>
     </ScrollView>

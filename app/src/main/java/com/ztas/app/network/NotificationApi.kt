@@ -17,7 +17,7 @@ interface NotificationApi {
         @Query("offset") offset: Int = 0,
         @Query("unread_only") unreadOnly: Boolean? = null,
         @Query("sort_order") sortOrder: String? = null
-    ): Response<NotificationsResponse>
+    ): Response<NotificationsApiEnvelope>
 
     @PATCH("user/notifications/{notificationId}/status")
     suspend fun updateNotificationStatus(

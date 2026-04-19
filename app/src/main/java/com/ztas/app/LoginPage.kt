@@ -121,9 +121,11 @@ class LoginActivity : AppCompatActivity() {
                 val parsedBegin = parseLoginBeginPayload(beginJson)
                 if (parsedBegin == null) {
                     Log.e(TAG, "Could not parse login/begin JSON: $beginJson")
+                    val hint = serverMessageFromJson(beginJson)
+                        .ifEmpty { "Could not read passkey options from server. Check Logcat tag $TAG for the raw JSON." }
                     Toast.makeText(
                         this@LoginActivity,
-                        "Login failed: unexpected server response",
+                        "Login failed: $hint",
                         Toast.LENGTH_LONG
                     ).show()
                     onComplete()
@@ -193,9 +195,11 @@ class LoginActivity : AppCompatActivity() {
                 val finishData = parseLoginFinishPayload(finishJson)
                 if (finishData == null) {
                     Log.e(TAG, "Could not parse login/finish JSON: $finishJson")
+                    val hint = serverMessageFromJson(finishJson)
+                        .ifEmpty { "Could not read token from server. Check Logcat tag $TAG for the raw JSON." }
                     Toast.makeText(
                         this@LoginActivity,
-                        "Login failed: unexpected server response",
+                        "Login failed: $hint",
                         Toast.LENGTH_LONG
                     ).show()
                     onComplete()
@@ -266,45 +270,99 @@ class LoginActivity : AppCompatActivity() {
         val email: String
     )
 
-    /** Gin wraps `session_token` + `assertion_data` under `data` (see Z-QryptGIN `WebAuthnHandler.LoginBegin`). */
+    private fun serverMessageFromJson(raw: String): String {
+        return runCatching {
+            JSONObject(raw).optString("message").trim()
+        }.getOrDefault("")
+    }
+
+    /**
+     * Parses `login/begin` body: supports Gin `data.session_token` + `assertion_data`, JSON-string
+     * assertion blobs, `publicKey` / `options` envelopes, and `rp.id` for rpId.
+     */
     private fun parseLoginBeginPayload(raw: String): ParsedLoginBegin? {
         return try {
             val root = JSONObject(raw)
-            val data = root.optJSONObject("data") ?: return null
-            val sessionToken = data.optString("session_token").ifEmpty { data.optString("sessionToken") }
+            val data = root.optJSONObject("data")
+            val sessionToken = sequenceOf(
+                data?.optString("session_token").orEmpty(),
+                data?.optString("sessionToken").orEmpty(),
+                root.optString("session_token"),
+                root.optString("sessionToken")
+            ).firstOrNull { it.isNotEmpty() } ?: ""
             if (sessionToken.isEmpty()) return null
-            val assertion = data.optJSONObject("assertion_data")
-                ?: data.optJSONObject("assertionData")
-                ?: return null
-            val options = assertion.optJSONObject("response") ?: assertion
-            val challenge = options.optString("challenge").ifEmpty { options.optString("Challenge") }
-            if (challenge.isEmpty()) return null
-            val rpId = options.optString("rpId").ifEmpty { options.optString("rp_id") }
-            if (rpId.isEmpty()) return null
-            val timeout = when {
-                options.has("timeout") && !options.isNull("timeout") ->
-                    options.optLong("timeout", 120_000L).takeIf { it > 0 }
-                        ?: options.optInt("timeout", 120_000).toLong()
-                else -> 120_000L
+
+            val optionRoots = mutableListOf<JSONObject>()
+            fun add(obj: JSONObject?) {
+                if (obj != null) optionRoots.add(obj)
             }
-            val uv = options.optString("userVerification").ifEmpty {
-                options.optString("user_verification")
-            }.ifEmpty { "required" }
-            val allow = options.optJSONArray("allowCredentials")
-                ?: options.optJSONArray("allow_credentials")
-                ?: JSONArray()
-            ParsedLoginBegin(sessionToken, challenge, rpId, timeout, uv, allow)
+            data?.let { d ->
+                add(d.optJSONObject("assertion_data"))
+                add(d.optJSONObject("assertionData"))
+                add(d.optJSONObject("assertion"))
+                add(d.optJSONObject("publicKey"))
+                add(d.optJSONObject("options"))
+                for (key in arrayOf("assertion_data", "assertionData")) {
+                    val s = d.optString(key)
+                    if (s.isNotBlank() && s.trimStart().startsWith("{")) {
+                        runCatching { add(JSONObject(s)) }
+                    }
+                }
+            }
+            add(root.optJSONObject("assertion_data"))
+            add(root.optJSONObject("publicKey"))
+
+            for (assertion in optionRoots) {
+                val options = assertion.optJSONObject("response")
+                    ?: assertion.optJSONObject("publicKey")
+                    ?: assertion
+                parsedBeginFromWebAuthnOptions(options, sessionToken)?.let { return it }
+            }
+            data?.let { parsedBeginFromWebAuthnOptions(it, sessionToken) }
         } catch (e: Exception) {
             Log.e(TAG, "parseLoginBeginPayload", e)
             null
         }
     }
 
+    private fun parsedBeginFromWebAuthnOptions(
+        options: JSONObject,
+        sessionToken: String
+    ): ParsedLoginBegin? {
+        if (sessionToken.isEmpty()) return null
+        val challenge = options.optString("challenge").ifEmpty { options.optString("Challenge") }
+        if (challenge.isEmpty()) return null
+        var rpId = options.optString("rpId").ifEmpty { options.optString("rp_id") }
+        if (rpId.isEmpty()) {
+            rpId = options.optJSONObject("rp")?.optString("id").orEmpty()
+        }
+        if (rpId.isEmpty()) return null
+        val timeout = when {
+            options.has("timeout") && !options.isNull("timeout") ->
+                options.optLong("timeout", 120_000L).takeIf { it > 0 }
+                    ?: options.optInt("timeout", 120_000).toLong()
+            else -> 120_000L
+        }
+        val uv = options.optString("userVerification").ifEmpty {
+            options.optString("user_verification")
+        }.ifEmpty { "required" }
+        val allow = options.optJSONArray("allowCredentials")
+            ?: options.optJSONArray("allow_credentials")
+            ?: JSONArray()
+        return ParsedLoginBegin(sessionToken, challenge, rpId, timeout, uv, allow)
+    }
+
     private fun parseLoginFinishPayload(raw: String): ParsedLoginFinish? {
         return try {
             val root = JSONObject(raw)
             val data = root.optJSONObject("data") ?: root
-            val token = data.optString("token").ifEmpty { return null }
+            var token = data.optString("token").ifEmpty { data.optString("access_token") }
+                .ifEmpty { data.optString("accessToken") }
+            if (token.isEmpty()) {
+                token = data.optJSONObject("data")?.optString("token").orEmpty()
+                    .ifEmpty { data.optJSONObject("data")?.optString("access_token").orEmpty() }
+            }
+            if (token.isEmpty()) return null
             val userId = when {
                 data.has("user_id") && !data.isNull("user_id") && data.get("user_id") is Number ->
                     data.getLong("user_id").toString()

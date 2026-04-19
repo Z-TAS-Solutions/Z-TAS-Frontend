@@ -14,7 +14,7 @@ interface SessionApi {
         @Header("Authorization") token: String,
         @Query("limit") limit: Int = 20,
         @Query("offset") offset: Int = 0
-    ): Response<SessionsResponse>
+    ): Response<SessionsApiEnvelope>
 
     @POST("user/sessions/logout-others")
     suspend fun logoutOtherDevices(
