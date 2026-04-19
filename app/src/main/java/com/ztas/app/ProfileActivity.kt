@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.Button
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -17,6 +16,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.credentials.CredentialManager
+import androidx.lifecycle.lifecycleScope
 import com.ztas.app.network.DeleteAccountRequest
 import com.ztas.app.network.RetrofitClient
 import kotlinx.coroutines.CoroutineScope
@@ -24,12 +25,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.Locale
 
 class ProfileActivity : AppCompatActivity() {
 
     private val userApi = RetrofitClient.userApi
     private val sessionApi = RetrofitClient.sessionApi
+    private val passkeyCredentialManager by lazy { CredentialManager.create(this) }
 
     private val pickProfileImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -109,47 +110,8 @@ class ProfileActivity : AppCompatActivity() {
         if (cachedName.isNotBlank()) {
             nameView.text = cachedName
         } else if (cachedEmail.isNotBlank()) {
-            nameView.text = displayNameFromEmail(cachedEmail)
+            nameView.text = ProfileDisplayName.displayNameFromEmail(cachedEmail)
         }
-    }
-
-    /** Turns "ravi.kumar@example.com" → "Ravi Kumar" as a friendly fallback. */
-    private fun displayNameFromEmail(email: String): String {
-        val local = email.substringBefore('@', missingDelimiterValue = email)
-        if (local.isBlank()) return "User"
-        return local
-            .split('.', '_', '-', '+')
-            .filter { it.isNotBlank() }
-            .joinToString(" ") { part ->
-                part.replaceFirstChar { c -> if (c.isLowerCase()) c.titlecase() else c.toString() }
-            }
-    }
-
-    /**
-     * Prefer the registration full name when the API still returns a single-token handle
-     * that matches the email local part (e.g. "alishamohamed7864@gmail.com" → "Alishamohamed7864").
-     */
-    private fun profileHeaderName(profileName: String, profileEmail: String): String {
-        val email = profileEmail.ifBlank { AuthPreferences.cachedEmail(this) }
-        val cached = AuthPreferences.cachedDisplayName(this).trim()
-        if (profileName.isNotBlank()) {
-            if (cached.isNotBlank() && isSingleTokenEmailHandle(profileName, email)) {
-                return cached
-            }
-            return profileName
-        }
-        return cached.ifBlank { displayNameFromEmail(email) }
-    }
-
-    private fun isSingleTokenEmailHandle(name: String, email: String): Boolean {
-        if (email.isBlank()) return false
-        if (name.any { it.isWhitespace() }) return false
-        val local = email.substringBefore('@', missingDelimiterValue = email)
-            .lowercase(Locale.getDefault())
-            .filter { it.isLetterOrDigit() }
-        if (local.isEmpty()) return false
-        val compact = name.lowercase(Locale.getDefault()).filter { it.isLetterOrDigit() }
-        return compact == local
     }
 
     private fun authHeaderOrNull(): String? = AuthPreferences.bearerOrNull(this)
@@ -186,8 +148,12 @@ class ProfileActivity : AppCompatActivity() {
                 val profile = raw?.let { UserProfileJson.parse(it) }
 
                 if (response.isSuccessful && profile != null) {
-                    findViewById<TextView>(R.id.username).text =
-                        profileHeaderName(profile.name, profile.email)
+                    val resolved =
+                        ProfileDisplayName.headerName(this@ProfileActivity, profile.name, profile.email)
+                    findViewById<TextView>(R.id.username).text = resolved
+                    val emailForCheck =
+                        profile.email.ifBlank { AuthPreferences.cachedEmail(this@ProfileActivity) }
+                    ProfileDisplayName.persistIfRichLabel(this@ProfileActivity, resolved, emailForCheck)
                     if (profile.email.isNotBlank()) {
                         findViewById<TextView>(R.id.useremail).text = profile.email
                     }
@@ -374,28 +340,6 @@ class ProfileActivity : AppCompatActivity() {
             null
         )
 
-        // Inject a password EditText before the divider programmatically
-        val container = dialogView as LinearLayout
-        val passwordInput = EditText(this).apply {
-            hint = "Enter password to confirm"
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-            setTextColor(android.graphics.Color.WHITE)
-            setHintTextColor(android.graphics.Color.GRAY)
-            setBackgroundResource(android.R.drawable.edit_text)
-            val padding = (16 * resources.displayMetrics.density).toInt()
-            setPadding(padding, padding, padding, padding)
-            
-            val params = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            params.setMargins(0, 0, 0, (24 * resources.displayMetrics.density).toInt())
-            layoutParams = params
-        }
-        
-        // Add it at index 3 (after Warning Icon, Title, and Message)
-        container.addView(passwordInput, 3)
-
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
             .setCancelable(false)
@@ -411,41 +355,43 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         deleteBtn.setOnClickListener {
-            val password = passwordInput.text.toString()
-            if (password.isEmpty()) {
-                Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
             deleteBtn.isEnabled = false
 
-            CoroutineScope(Dispatchers.Main).launch {
+            lifecycleScope.launch {
                 try {
-                    val token = authHeaderOrNull()
-                    if (token == null) {
-                        Toast.makeText(this@ProfileActivity, "Not signed in", Toast.LENGTH_SHORT).show()
-                        deleteBtn.isEnabled = true
-                        return@launch
-                    }
-                    val response = withContext(Dispatchers.IO) {
-                        userApi.deleteAccount(
-                            token = token,
-                            request = DeleteAccountRequest(password)
-                        )
-                    }
-
-                    if (response.isSuccessful) {
-                        Toast.makeText(this@ProfileActivity, "Account deleted successfully", Toast.LENGTH_LONG).show()
-                        dialog.dismiss()
-                        AuthPreferences.clear(this@ProfileActivity)
-                        startActivity(Intent(this@ProfileActivity, LoginActivity::class.java).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        })
-                        finish()
-                    } else {
-                        Log.e(TAG, "Delete account failed: ${response.code()}")
-                        Toast.makeText(this@ProfileActivity, "Failed to delete account. Incorrect password?", Toast.LENGTH_LONG).show()
-                        deleteBtn.isEnabled = true
+                    val emailOrNull = AuthPreferences.cachedEmail(this@ProfileActivity).trim().ifEmpty { null }
+                    val passkeyOutcome = WebAuthnLoginFlow.authenticate(
+                        activity = this@ProfileActivity,
+                        credentialManager = passkeyCredentialManager,
+                        emailOrNull = emailOrNull
+                    )
+                    when (passkeyOutcome) {
+                        is WebAuthnLoginFlow.PasskeyOutcome.Error -> {
+                            Toast.makeText(this@ProfileActivity, passkeyOutcome.message, Toast.LENGTH_LONG).show()
+                            deleteBtn.isEnabled = true
+                        }
+                        is WebAuthnLoginFlow.PasskeyOutcome.Success -> {
+                            val bearer = WebAuthnLoginFlow.bearerHeaderForToken(passkeyOutcome.data.token)
+                            val response = withContext(Dispatchers.IO) {
+                                userApi.deleteAccount(
+                                    token = bearer,
+                                    request = DeleteAccountRequest("")
+                                )
+                            }
+                            if (response.isSuccessful) {
+                                Toast.makeText(this@ProfileActivity, "Account deleted successfully", Toast.LENGTH_LONG).show()
+                                dialog.dismiss()
+                                AuthPreferences.clear(this@ProfileActivity)
+                                startActivity(Intent(this@ProfileActivity, LoginActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                })
+                                finish()
+                            } else {
+                                Log.e(TAG, "Delete account failed: ${response.code()}")
+                                Toast.makeText(this@ProfileActivity, "Failed to delete account", Toast.LENGTH_LONG).show()
+                                deleteBtn.isEnabled = true
+                            }
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error deleting account", e)

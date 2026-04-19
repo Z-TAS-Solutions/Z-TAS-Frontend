@@ -19,12 +19,19 @@ object AuthPreferences {
     private fun prefs(ctx: Context) = ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun saveSession(context: Context, accessToken: String, userId: String, email: String, role: String) {
-        prefs(context).edit()
+        val p = prefs(context)
+        val prevUserId = p.getString(KEY_USER_ID, "").orEmpty().trim()
+        val nextUserId = userId.trim()
+        val e = p.edit()
             .putString(KEY_ACCESS_TOKEN, accessToken.trim())
-            .putString(KEY_USER_ID, userId)
+            .putString(KEY_USER_ID, nextUserId)
             .putString(KEY_EMAIL, email)
             .putString(KEY_ROLE, role)
-            .apply()
+        // Avoid showing one user's saved full name after a different account signs in.
+        if (prevUserId.isNotEmpty() && nextUserId.isNotEmpty() && prevUserId != nextUserId) {
+            e.remove(KEY_DISPLAY_NAME)
+        }
+        e.apply()
     }
 
     fun bearerOrNull(context: Context): String? {

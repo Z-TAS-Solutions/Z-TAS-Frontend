@@ -16,6 +16,7 @@ import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCreden
 import androidx.lifecycle.lifecycleScope
 import com.ztas.app.network.AttestationResponseBody
 import com.ztas.app.network.BeginRegisterRequest
+import com.ztas.app.network.BeginRegisterResponse
 import com.ztas.app.network.FinishRegisterRequest
 import com.ztas.app.network.RetrofitClient
 import kotlinx.coroutines.Dispatchers
@@ -152,6 +153,12 @@ class PasskeyActivity : AppCompatActivity() {
                 }
 
                 val beginBody = beginResponse.body()!!
+                if (userDisplayName.isBlank()) {
+                    val fromServer = displayNameFromBeginResponse(beginBody)
+                    if (fromServer.isNotBlank()) {
+                        AuthPreferences.setCachedDisplayName(this@PasskeyActivity, fromServer)
+                    }
+                }
                 val sessionToken = beginBody.data?.sessionToken.orEmpty()
                 if (sessionToken.isBlank()) {
                     Toast.makeText(
@@ -397,6 +404,20 @@ class PasskeyActivity : AppCompatActivity() {
     }
 
     /** Prefer JSON `message` from Gin-style error bodies instead of dumping raw JSON. */
+    /** PublicKey `user.displayName` from `register/begin` (backend often sends the real name here). */
+    private fun displayNameFromBeginResponse(begin: BeginRegisterResponse): String {
+        val fromOptions = begin.data?.creationData?.publicKey
+        val user = fromOptions?.user ?: begin.user
+        if (user == null) return ""
+        val dn = user.displayName.trim()
+        val n = user.name.trim()
+        return when {
+            dn.isNotEmpty() -> dn
+            n.isNotEmpty() -> n
+            else -> ""
+        }
+    }
+
     private fun apiErrorUserMessage(body: String): String {
         return try {
             val o = JSONObject(body)
