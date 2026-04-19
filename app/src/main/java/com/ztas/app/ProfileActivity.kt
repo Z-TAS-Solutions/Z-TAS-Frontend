@@ -19,13 +19,20 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetPublicKeyCredentialOption
+import androidx.credentials.PublicKeyCredential
+import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.lifecycleScope
-import com.ztas.app.network.DeleteAccountRequest
+import com.ztas.app.network.AssertionResponseBody
+import com.ztas.app.network.FinishLoginRequest
 import com.ztas.app.network.RetrofitClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 
 class ProfileActivity : AppCompatActivity() {
@@ -256,6 +263,70 @@ class ProfileActivity : AppCompatActivity() {
         return inferFriendlyDeviceLabel(rawName)
     }
 
+    private data class ParsedDeleteBegin(
+        val sessionToken: String,
+        val requestJson: String
+    )
+
+    private fun parseDeleteBeginPayload(raw: String): ParsedDeleteBegin? {
+        return try {
+            val root = JSONObject(raw)
+            val data = root.optJSONObject("data") ?: root
+            val sessionToken = sequenceOf(
+                data.optString("sessionToken"),
+                data.optString("session_token"),
+                root.optString("sessionToken"),
+                root.optString("session_token")
+            ).map { it.trim() }.firstOrNull { it.isNotEmpty() } ?: return null
+
+            val assertion = data.optJSONObject("assertionData")
+                ?: data.optJSONObject("assertion_data")
+                ?: data.optJSONObject("assertion")
+                ?: run {
+                    val s = data.optString("assertionData")
+                    if (s.trimStart().startsWith("{")) JSONObject(s) else null
+                }
+                ?: return null
+
+            val options = assertion.optJSONObject("response")
+                ?: assertion.optJSONObject("publicKey")
+                ?: assertion
+
+            val challenge = options.optString("challenge").ifBlank { options.optString("Challenge") }
+            var rpId = options.optString("rpId").ifBlank { options.optString("rp_id") }
+            if (rpId.isBlank()) {
+                rpId = options.optJSONObject("rp")?.optString("id").orEmpty()
+            }
+            if (challenge.isBlank() || rpId.isBlank()) return null
+
+            val timeout = when {
+                options.has("timeout") && !options.isNull("timeout") ->
+                    options.optLong("timeout", 120_000L).takeIf { it > 0 }
+                        ?: options.optInt("timeout", 120_000).toLong()
+                else -> 120_000L
+            }
+            val userVerification = options.optString("userVerification").ifBlank {
+                options.optString("user_verification")
+            }.ifBlank { "required" }
+            val allowCredentials = options.optJSONArray("allowCredentials")
+                ?: options.optJSONArray("allow_credentials")
+                ?: JSONArray()
+
+            val requestJson = JSONObject().apply {
+                put("challenge", challenge)
+                put("rpId", rpId)
+                put("timeout", timeout)
+                put("userVerification", userVerification)
+                put("allowCredentials", allowCredentials)
+            }.toString()
+
+            ParsedDeleteBegin(sessionToken = sessionToken, requestJson = requestJson)
+        } catch (e: Exception) {
+            Log.e(TAG, "parseDeleteBeginPayload failed", e)
+            null
+        }
+    }
+
     private fun showActiveSessionsDialog() {
         val dialogView = LayoutInflater.from(this).inflate(
             R.layout.active_sessions_dialog,
@@ -474,60 +545,91 @@ class ProfileActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 try {
-                    val emailOrNull = AuthPreferences.cachedEmail(this@ProfileActivity).trim().ifEmpty { null }
-                    val passkeyOutcome = WebAuthnLoginFlow.authenticate(
-                        activity = this@ProfileActivity,
-                        credentialManager = passkeyCredentialManager,
-                        emailOrNull = emailOrNull
-                    )
-                    when (passkeyOutcome) {
-                        is WebAuthnLoginFlow.PasskeyOutcome.Error -> {
-                            Toast.makeText(this@ProfileActivity, passkeyOutcome.message, Toast.LENGTH_LONG).show()
-                            deleteBtn.isEnabled = true
-                        }
-                        is WebAuthnLoginFlow.PasskeyOutcome.Success -> {
-                            val bearer = WebAuthnLoginFlow.bearerHeaderForToken(passkeyOutcome.data.token)
-                            val response = withContext(Dispatchers.IO) {
-                                val req = DeleteAccountRequest("")
-                                val del = userApi.deleteAccountDelete(token = bearer, request = req)
-                                if (del.code() != 404) return@withContext del
-                                val post = userApi.deleteAccountPost(token = bearer, request = req)
-                                // If both are 404, keep POST response (latest) but log both upstream.
-                                post
-                            }
-                            if (response.isSuccessful) {
-                                Toast.makeText(this@ProfileActivity, "Account deleted successfully", Toast.LENGTH_LONG).show()
-                                dialog.dismiss()
-                                AuthPreferences.clear(this@ProfileActivity)
-                                startActivity(Intent(this@ProfileActivity, LoginActivity::class.java).apply {
-                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                })
-                                finish()
-                            } else {
-                                val errorBody = runCatching { response.errorBody()?.string().orEmpty() }.getOrDefault("")
-                                Log.e(
-                                    TAG,
-                                    "Delete account failed. Tried: DELETE user/account/delete then POST user/account/delete. " +
-                                        "Final status=${response.code()} body=$errorBody"
-                                )
-                                val message = when {
-                                    response.code() == 404 ->
-                                        "Delete failed: backend route not found (tried DELETE+POST `user/account/delete`)."
-                                    errorBody.contains("password", ignoreCase = true) ->
-                                        "Delete failed: backend still requires password confirmation."
-                                    errorBody.contains("unauthorized", ignoreCase = true) ||
-                                        response.code() == 401 ->
-                                        "Delete failed: passkey was accepted, but the delete API rejected authorization."
-                                    errorBody.isNotBlank() ->
-                                        "Delete failed: $errorBody"
-                                    else ->
-                                        "Failed to delete account (${response.code()})"
-                                }
-                                Toast.makeText(this@ProfileActivity, message, Toast.LENGTH_LONG).show()
-                                deleteBtn.isEnabled = true
-                            }
-                        }
+                    val bearer = authHeaderOrNull()
+                    if (bearer == null) {
+                        Toast.makeText(this@ProfileActivity, "Not signed in", Toast.LENGTH_SHORT).show()
+                        deleteBtn.isEnabled = true
+                        return@launch
                     }
+
+                    val beginResponse = withContext(Dispatchers.IO) {
+                        userApi.beginDeleteAccount(token = bearer)
+                    }
+                    if (!beginResponse.isSuccessful || beginResponse.body() == null) {
+                        val err = runCatching { beginResponse.errorBody()?.string().orEmpty() }.getOrDefault("")
+                        val msg = if (err.isNotBlank()) "Delete begin failed: $err"
+                        else "Delete begin failed (${beginResponse.code()})"
+                        Toast.makeText(this@ProfileActivity, msg, Toast.LENGTH_LONG).show()
+                        deleteBtn.isEnabled = true
+                        return@launch
+                    }
+
+                    val parsedBegin = parseDeleteBeginPayload(beginResponse.body()!!.string())
+                    if (parsedBegin == null) {
+                        Toast.makeText(
+                            this@ProfileActivity,
+                            "Delete failed: invalid passkey challenge payload.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        deleteBtn.isEnabled = true
+                        return@launch
+                    }
+
+                    val getOption = GetPublicKeyCredentialOption(parsedBegin.requestJson)
+                    val getRequest = GetCredentialRequest(listOf(getOption))
+                    val result = passkeyCredentialManager.getCredential(this@ProfileActivity, getRequest)
+                    val credential = result.credential
+                    if (credential !is PublicKeyCredential) {
+                        Toast.makeText(this@ProfileActivity, "Unexpected credential type", Toast.LENGTH_LONG).show()
+                        deleteBtn.isEnabled = true
+                        return@launch
+                    }
+
+                    val assertionJson = JSONObject(credential.authenticationResponseJson)
+                    val responseObj = assertionJson.getJSONObject("response")
+                    val request = FinishLoginRequest(
+                        id = assertionJson.getString("id"),
+                        rawId = assertionJson.getString("rawId"),
+                        response = AssertionResponseBody(
+                            authenticatorData = responseObj.getString("authenticatorData"),
+                            clientDataJSON = responseObj.getString("clientDataJSON"),
+                            signature = responseObj.getString("signature"),
+                            userHandle = responseObj.optString("userHandle", "")
+                        ),
+                        type = assertionJson.optString("type", "public-key")
+                    )
+
+                    val confirmResponse = withContext(Dispatchers.IO) {
+                        userApi.confirmDeleteAccount(
+                            token = bearer,
+                            sessionToken = parsedBegin.sessionToken,
+                            request = request
+                        )
+                    }
+                    if (confirmResponse.isSuccessful) {
+                        Toast.makeText(this@ProfileActivity, "Account deleted successfully", Toast.LENGTH_LONG).show()
+                        dialog.dismiss()
+                        AuthPreferences.clear(this@ProfileActivity)
+                        startActivity(Intent(this@ProfileActivity, LoginActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        })
+                        finish()
+                    } else {
+                        val errorBody = runCatching { confirmResponse.errorBody()?.string().orEmpty() }.getOrDefault("")
+                        Log.e(TAG, "Delete confirm failed: ${confirmResponse.code()} - $errorBody")
+                        val message = if (errorBody.isNotBlank()) "Delete failed: $errorBody"
+                        else "Failed to delete account (${confirmResponse.code()})"
+                        Toast.makeText(this@ProfileActivity, message, Toast.LENGTH_LONG).show()
+                        deleteBtn.isEnabled = true
+                    }
+                } catch (e: GetCredentialException) {
+                    Log.e(TAG, "Passkey confirmation failed", e)
+                    Toast.makeText(
+                        this@ProfileActivity,
+                        "Passkey confirmation failed: ${e.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    deleteBtn.isEnabled = true
                 } catch (e: Exception) {
                     Log.e(TAG, "Error deleting account", e)
                     Toast.makeText(this@ProfileActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
