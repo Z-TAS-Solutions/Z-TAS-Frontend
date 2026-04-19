@@ -11,6 +11,7 @@ object AuthPreferences {
     private const val KEY_ACCESS_TOKEN = "access_token"
     private const val KEY_USER_ID = "user_id"
     private const val KEY_EMAIL = "email"
+    private const val KEY_NAME = "name"
     private const val KEY_ROLE = "role"
     private const val KEY_PROFILE_IMAGE_PATH = "profile_image_path"
 
@@ -36,6 +37,16 @@ object AuthPreferences {
 
     fun cachedUserId(context: Context): String =
         prefs(context).getString(KEY_USER_ID, "").orEmpty()
+
+    /** Persisted display name (set during registration and refreshed from /user/profile). */
+    fun cachedName(context: Context): String =
+        prefs(context).getString(KEY_NAME, "").orEmpty()
+
+    fun setCachedName(context: Context, name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        prefs(context).edit().putString(KEY_NAME, trimmed).apply()
+    }
 
     fun setProfileImagePath(context: Context, absolutePath: String?) {
         val e = prefs(context).edit()

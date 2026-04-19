@@ -309,7 +309,12 @@ data class ForceLogoutData(
 // ═══════════════════════════════════════════════════════════════
 
 data class DeleteAccountRequest(
-    val password: String
+    /**
+     * Legacy password confirmation. Kept nullable so the new passkey-confirmed
+     * delete flow can omit it; the backend should accept the request when the
+     * caller has just completed a successful WebAuthn re-authentication.
+     */
+    val password: String? = null
 )
 
 data class DeleteAccountResponse(

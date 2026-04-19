@@ -196,6 +196,10 @@ class RegistrationPage : AppCompatActivity() {
 
                     Log.d(TAG, "Registration success: $resolvedMessage, userId=$resolvedUserId")
 
+                    // Persist the user-entered name so the Profile screen can show it
+                    // even before /user/profile succeeds (it currently 404s for new users).
+                    AuthPreferences.setCachedName(this@RegistrationPage, name)
+
                     Toast.makeText(
                         this@RegistrationPage,
                         resolvedMessage,

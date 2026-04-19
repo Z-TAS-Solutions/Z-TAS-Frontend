@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.Button
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -17,18 +16,30 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetPublicKeyCredentialOption
+import androidx.credentials.PublicKeyCredential
+import androidx.credentials.exceptions.GetCredentialException
+import com.ztas.app.network.AssertionResponseBody
+import com.ztas.app.network.BeginLoginRequest
 import com.ztas.app.network.DeleteAccountRequest
+import com.ztas.app.network.FinishLoginRequest
 import com.ztas.app.network.RetrofitClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 
 class ProfileActivity : AppCompatActivity() {
 
     private val userApi = RetrofitClient.userApi
     private val sessionApi = RetrofitClient.sessionApi
+    private val webAuthnApi = RetrofitClient.webAuthnApi
+    private lateinit var credentialManager: CredentialManager
 
     private val pickProfileImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -48,6 +59,8 @@ class ProfileActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile_host)
+
+        credentialManager = CredentialManager.create(this)
 
         // Initialize Compose Bottom Nav
         val composeView = findViewById<ComposeView>(R.id.compose_bottom_nav)
@@ -98,12 +111,19 @@ class ProfileActivity : AppCompatActivity() {
      */
     private fun applyCachedIdentity() {
         val cachedEmail = AuthPreferences.cachedEmail(this)
+        val cachedName = AuthPreferences.cachedName(this)
         val emailView = findViewById<TextView>(R.id.useremail)
         val nameView = findViewById<TextView>(R.id.username)
 
         if (cachedEmail.isNotBlank()) {
             emailView.text = cachedEmail
-            nameView.text = displayNameFromEmail(cachedEmail)
+        }
+        // Prefer the real name captured at registration; fall back to an
+        // email-derived guess only if no name was ever stored.
+        nameView.text = when {
+            cachedName.isNotBlank() -> cachedName
+            cachedEmail.isNotBlank() -> displayNameFromEmail(cachedEmail)
+            else -> nameView.text
         }
     }
 
@@ -155,6 +175,7 @@ class ProfileActivity : AppCompatActivity() {
                 if (response.isSuccessful && profile != null) {
                     if (profile.name.isNotBlank()) {
                         findViewById<TextView>(R.id.username).text = profile.name
+                        AuthPreferences.setCachedName(this@ProfileActivity, profile.name)
                     }
                     if (profile.email.isNotBlank()) {
                         findViewById<TextView>(R.id.useremail).text = profile.email
@@ -342,28 +363,6 @@ class ProfileActivity : AppCompatActivity() {
             null
         )
 
-        // Inject a password EditText before the divider programmatically
-        val container = dialogView as LinearLayout
-        val passwordInput = EditText(this).apply {
-            hint = "Enter password to confirm"
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-            setTextColor(android.graphics.Color.WHITE)
-            setHintTextColor(android.graphics.Color.GRAY)
-            setBackgroundResource(android.R.drawable.edit_text)
-            val padding = (16 * resources.displayMetrics.density).toInt()
-            setPadding(padding, padding, padding, padding)
-            
-            val params = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            params.setMargins(0, 0, 0, (24 * resources.displayMetrics.density).toInt())
-            layoutParams = params
-        }
-        
-        // Add it at index 3 (after Warning Icon, Title, and Message)
-        container.addView(passwordInput, 3)
-
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
             .setCancelable(false)
@@ -379,31 +378,50 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         deleteBtn.setOnClickListener {
-            val password = passwordInput.text.toString()
-            if (password.isEmpty()) {
-                Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
             deleteBtn.isEnabled = false
+            val originalText = deleteBtn.text
+            deleteBtn.text = "VERIFYING…"
 
             CoroutineScope(Dispatchers.Main).launch {
                 try {
                     val token = authHeaderOrNull()
-                    if (token == null) {
-                        Toast.makeText(this@ProfileActivity, "Not signed in", Toast.LENGTH_SHORT).show()
+                    val email = AuthPreferences.cachedEmail(this@ProfileActivity)
+                    if (token == null || email.isBlank()) {
+                        Toast.makeText(
+                            this@ProfileActivity,
+                            "Session expired. Please sign in again.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        deleteBtn.text = originalText
                         deleteBtn.isEnabled = true
                         return@launch
                     }
+
+                    // Step 1: re-authenticate with the user's passkey before destroying the account.
+                    val verified = verifyWithPasskey(email)
+                    if (!verified) {
+                        deleteBtn.text = originalText
+                        deleteBtn.isEnabled = true
+                        return@launch
+                    }
+
+                    deleteBtn.text = "DELETING…"
+
+                    // Step 2: actually delete. Password is omitted now that the user proved
+                    // ownership with their passkey.
                     val response = withContext(Dispatchers.IO) {
                         userApi.deleteAccount(
                             token = token,
-                            request = DeleteAccountRequest(password)
+                            request = DeleteAccountRequest()
                         )
                     }
 
                     if (response.isSuccessful) {
-                        Toast.makeText(this@ProfileActivity, "Account deleted successfully", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            this@ProfileActivity,
+                            "Account deleted successfully",
+                            Toast.LENGTH_LONG
+                        ).show()
                         dialog.dismiss()
                         AuthPreferences.clear(this@ProfileActivity)
                         startActivity(Intent(this@ProfileActivity, LoginActivity::class.java).apply {
@@ -411,18 +429,166 @@ class ProfileActivity : AppCompatActivity() {
                         })
                         finish()
                     } else {
-                        Log.e(TAG, "Delete account failed: ${response.code()}")
-                        Toast.makeText(this@ProfileActivity, "Failed to delete account. Incorrect password?", Toast.LENGTH_LONG).show()
+                        val errBody = response.errorBody()?.string().orEmpty()
+                        Log.e(TAG, "Delete account failed: ${response.code()} body=$errBody")
+                        val msg = when (response.code()) {
+                            401, 403 -> "Passkey verification expired. Please try again."
+                            else -> "Failed to delete account. Please try again."
+                        }
+                        Toast.makeText(this@ProfileActivity, msg, Toast.LENGTH_LONG).show()
+                        deleteBtn.text = originalText
                         deleteBtn.isEnabled = true
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error deleting account", e)
                     Toast.makeText(this@ProfileActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    deleteBtn.text = originalText
                     deleteBtn.isEnabled = true
                 }
             }
         }
 
         dialog.show()
+    }
+
+    // ───────────────────────────────────────────────────────────────────
+    // WebAuthn re-authentication for sensitive actions (e.g. delete account)
+    // ───────────────────────────────────────────────────────────────────
+
+    /**
+     * Runs the same passkey ceremony used at login (`/webauthn/login/begin` →
+     * CredentialManager → `/webauthn/login/finish`) purely as a re-authentication
+     * gate. Returns `true` only when the server validates the assertion.
+     */
+    private suspend fun verifyWithPasskey(email: String): Boolean {
+        return try {
+            val begin = withContext(Dispatchers.IO) {
+                webAuthnApi.beginLogin(BeginLoginRequest(email = email))
+            }
+            if (!begin.isSuccessful || begin.body() == null) {
+                val err = begin.errorBody()?.string().orEmpty()
+                Log.e(TAG, "Passkey begin failed: ${begin.code()} — $err")
+                Toast.makeText(this, "Couldn't start passkey check. Please try again.", Toast.LENGTH_LONG).show()
+                return false
+            }
+
+            val parsed = parseLoginBeginPayload(begin.body()!!.string()) ?: run {
+                Log.e(TAG, "Passkey begin: could not parse server response")
+                Toast.makeText(this, "Passkey check failed (bad server response).", Toast.LENGTH_LONG).show()
+                return false
+            }
+
+            val getJson = JSONObject().apply {
+                put("challenge", parsed.challenge)
+                put("rpId", parsed.rpId)
+                put("timeout", parsed.timeout)
+                put("userVerification", parsed.userVerification)
+                put("allowCredentials", parsed.allowCredentials)
+            }.toString()
+
+            val getRequest = GetCredentialRequest(listOf(GetPublicKeyCredentialOption(getJson)))
+            val result = credentialManager.getCredential(this@ProfileActivity, getRequest)
+            val credential = result.credential as? PublicKeyCredential ?: run {
+                Toast.makeText(this, "Unexpected credential type.", Toast.LENGTH_SHORT).show()
+                return false
+            }
+
+            val assertionJson = JSONObject(credential.authenticationResponseJson)
+            val responseObj = assertionJson.getJSONObject("response")
+            val finishRequest = FinishLoginRequest(
+                id = assertionJson.getString("id"),
+                rawId = assertionJson.getString("rawId"),
+                response = AssertionResponseBody(
+                    authenticatorData = responseObj.getString("authenticatorData"),
+                    clientDataJSON = responseObj.getString("clientDataJSON"),
+                    signature = responseObj.getString("signature"),
+                    userHandle = responseObj.optString("userHandle", "")
+                ),
+                type = assertionJson.optString("type", "public-key")
+            )
+
+            val finish = withContext(Dispatchers.IO) {
+                webAuthnApi.finishLogin(sessionToken = parsed.sessionToken, request = finishRequest)
+            }
+            if (!finish.isSuccessful) {
+                val err = finish.errorBody()?.string().orEmpty()
+                Log.e(TAG, "Passkey finish failed: ${finish.code()} — $err")
+                Toast.makeText(this, "Passkey verification failed. Please try again.", Toast.LENGTH_LONG).show()
+                return false
+            }
+            true
+        } catch (e: GetCredentialException) {
+            Log.e(TAG, "Passkey verification cancelled / failed", e)
+            Toast.makeText(this, "Passkey verification was cancelled.", Toast.LENGTH_SHORT).show()
+            false
+        } catch (e: Exception) {
+            Log.e(TAG, "Passkey verification error", e)
+            Toast.makeText(this, "Passkey error: ${e.message}", Toast.LENGTH_SHORT).show()
+            false
+        }
+    }
+
+    private data class ParsedLoginBegin(
+        val sessionToken: String,
+        val challenge: String,
+        val rpId: String,
+        val timeout: Long,
+        val userVerification: String,
+        val allowCredentials: JSONArray
+    )
+
+    /** Mirror of [LoginActivity.parseLoginBeginPayload] kept local so the two flows can evolve independently. */
+    private fun parseLoginBeginPayload(raw: String): ParsedLoginBegin? {
+        return try {
+            val root = JSONObject(raw)
+            val data = root.optJSONObject("data")
+            val sessionToken = sequenceOf(
+                data?.optString("session_token").orEmpty(),
+                data?.optString("sessionToken").orEmpty(),
+                root.optString("session_token"),
+                root.optString("sessionToken")
+            ).firstOrNull { it.isNotEmpty() } ?: return null
+
+            val candidates = mutableListOf<JSONObject>()
+            fun add(obj: JSONObject?) { if (obj != null) candidates.add(obj) }
+            data?.let { d ->
+                add(d.optJSONObject("assertion_data"))
+                add(d.optJSONObject("assertionData"))
+                add(d.optJSONObject("assertion"))
+                add(d.optJSONObject("publicKey"))
+                add(d.optJSONObject("options"))
+            }
+            add(root.optJSONObject("assertion_data"))
+            add(root.optJSONObject("publicKey"))
+
+            for (assertion in candidates) {
+                val opts = assertion.optJSONObject("response")
+                    ?: assertion.optJSONObject("publicKey")
+                    ?: assertion
+                buildParsedBegin(opts, sessionToken)?.let { return it }
+            }
+            data?.let { buildParsedBegin(it, sessionToken) }
+        } catch (e: Exception) {
+            Log.e(TAG, "parseLoginBeginPayload", e)
+            null
+        }
+    }
+
+    private fun buildParsedBegin(options: JSONObject, sessionToken: String): ParsedLoginBegin? {
+        val challenge = options.optString("challenge").ifEmpty { options.optString("Challenge") }
+        if (challenge.isEmpty()) return null
+        var rpId = options.optString("rpId").ifEmpty { options.optString("rp_id") }
+        if (rpId.isEmpty()) rpId = options.optJSONObject("rp")?.optString("id").orEmpty()
+        if (rpId.isEmpty()) return null
+        val timeout = if (options.has("timeout") && !options.isNull("timeout"))
+            options.optLong("timeout", 120_000L).takeIf { it > 0 } ?: 120_000L
+        else 120_000L
+        val uv = options.optString("userVerification").ifEmpty {
+            options.optString("user_verification")
+        }.ifEmpty { "required" }
+        val allow = options.optJSONArray("allowCredentials")
+            ?: options.optJSONArray("allow_credentials")
+            ?: JSONArray()
+        return ParsedLoginBegin(sessionToken, challenge, rpId, timeout, uv, allow)
     }
 }
