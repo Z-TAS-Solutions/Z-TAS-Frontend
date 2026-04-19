@@ -99,6 +99,62 @@ class ProfileActivity : AppCompatActivity() {
         applySavedProfilePhoto()
         applyCachedIdentity()
         loadProfileData()
+
+        // Tap the username to set / correct it locally. This is the user's escape
+        // hatch when the backend doesn't return a real name on /user/profile.
+        findViewById<TextView>(R.id.username)?.apply {
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { showEditDisplayNameDialog() }
+        }
+    }
+
+    /** Inline editor for the header username — saves to AuthPreferences and refreshes the view. */
+    private fun showEditDisplayNameDialog() {
+        val nameView = findViewById<TextView>(R.id.username)
+        val current = AuthPreferences.cachedDisplayName(this).ifBlank {
+            nameView?.text?.toString().orEmpty()
+        }
+
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        val input = android.widget.EditText(this).apply {
+            hint = "Your name"
+            setText(current)
+            setSelection(text?.length ?: 0)
+            setSingleLine(true)
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.GRAY)
+        }
+        val container = android.widget.FrameLayout(this).apply {
+            setPadding(padding, padding / 2, padding, 0)
+            addView(input)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Edit display name")
+            .setView(container)
+            .setPositiveButton("Save") { dialog, _ ->
+                val newName = input.text?.toString()?.trim().orEmpty()
+                if (newName.isEmpty()) {
+                    Toast.makeText(this, "Name can't be empty", Toast.LENGTH_SHORT).show()
+                } else {
+                    val email = AuthPreferences.cachedEmail(this)
+                    if (email.isNotBlank() && DisplayNameHints.isEmailLocalHandle(newName, email)) {
+                        Toast.makeText(
+                            this,
+                            "That looks like your email handle. Please enter your full name.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        AuthPreferences.setCachedDisplayName(this, newName, emailForCheck = email)
+                        nameView?.text = newName
+                        Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     /**
