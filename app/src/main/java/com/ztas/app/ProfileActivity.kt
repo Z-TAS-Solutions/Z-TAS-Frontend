@@ -222,6 +222,35 @@ class ProfileActivity : AppCompatActivity() {
             .ifBlank { "This device" }
     }
 
+    private fun inferFriendlyDeviceLabel(rawName: String): String {
+        val v = rawName.trim().lowercase()
+        if (v.isBlank()) return "Other device"
+
+        return when {
+            "iphone" in v || "ipad" in v || "ios" in v -> "iPhone"
+            "windows" in v -> "Windows PC"
+            "mac os" in v || "macos" in v || "macintosh" in v -> "Mac"
+            "linux" in v -> "Linux device"
+            "android" in v ||
+                "samsung" in v ||
+                "oppo" in v ||
+                "vivo" in v ||
+                "xiaomi" in v ||
+                "redmi" in v ||
+                "oneplus" in v ||
+                "pixel" in v ||
+                "huawei" in v -> "Android phone"
+            "mozilla/" in v || "chrome/" in v || "safari/" in v || "firefox/" in v -> "Web browser"
+            looksGenericDeviceName(v) -> "Android phone"
+            else -> rawName.trim()
+        }
+    }
+
+    private fun displayDeviceName(rawName: String, isCurrent: Boolean): String {
+        if (isCurrent && looksGenericDeviceName(rawName)) return localDeviceLabel()
+        return inferFriendlyDeviceLabel(rawName)
+    }
+
     private fun showActiveSessionsDialog() {
         val dialogView = LayoutInflater.from(this).inflate(
             R.layout.active_sessions_dialog,
@@ -281,16 +310,11 @@ class ProfileActivity : AppCompatActivity() {
 
                     if (first != null) {
                         row1.isGone = false
-                        val firstName = if (first.current && looksGenericDeviceName(first.deviceName)) {
-                            localDeviceLabel()
-                        } else {
-                            first.deviceName
-                        }
                         bindRow(
                             deviceNameView = name1,
                             statusView = status1,
                             iconView = icon1,
-                            deviceName = firstName,
+                            deviceName = displayDeviceName(first.deviceName, first.current),
                             isCurrent = first.current,
                             lastActive = first.lastActive
                         )
@@ -300,16 +324,11 @@ class ProfileActivity : AppCompatActivity() {
 
                     if (second != null) {
                         row2.isGone = false
-                        val secondName = if (second.current && looksGenericDeviceName(second.deviceName)) {
-                            localDeviceLabel()
-                        } else {
-                            second.deviceName
-                        }
                         bindRow(
                             deviceNameView = name2,
                             statusView = status2,
                             iconView = icon2,
-                            deviceName = secondName,
+                            deviceName = displayDeviceName(second.deviceName, second.current),
                             isCurrent = second.current,
                             lastActive = second.lastActive
                         )
