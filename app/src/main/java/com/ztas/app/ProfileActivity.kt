@@ -444,6 +444,10 @@ class ProfileActivity : AppCompatActivity() {
 
                 if (finishResponse.isSuccessful) {
                     Toast.makeText(this@ProfileActivity, "New passkey added successfully", Toast.LENGTH_LONG).show()
+                    findViewById<TextView>(R.id.addPasskeySubtitle)?.apply {
+                        text = "Passkey added just now"
+                        setTextColor(android.graphics.Color.parseColor("#00cc66"))
+                    }
                 } else {
                     val err = runCatching { finishResponse.errorBody()?.string().orEmpty() }.getOrDefault("")
                     val msg = if (err.isNotBlank()) "Passkey enroll failed: $err"
