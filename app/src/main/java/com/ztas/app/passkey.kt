@@ -16,6 +16,7 @@ import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCreden
 import androidx.lifecycle.lifecycleScope
 import com.ztas.app.network.AttestationResponseBody
 import com.ztas.app.network.BeginRegisterRequest
+import com.ztas.app.network.BeginRegisterResponse
 import com.ztas.app.network.FinishRegisterRequest
 import com.ztas.app.network.RetrofitClient
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +33,7 @@ class PasskeyActivity : AppCompatActivity() {
     private var userId: String = ""
     private var userEmail: String = ""
     private var userPhone: String = ""
+    private var userDisplayName: String = ""
     private var isPasskeyRegistrationInProgress = false
 
     companion object {
@@ -48,6 +50,10 @@ class PasskeyActivity : AppCompatActivity() {
         userId = intent.getStringExtra("USER_ID") ?: ""
         userEmail = intent.getStringExtra("USER_EMAIL") ?: ""
         userPhone = intent.getStringExtra("USER_PHONE") ?: ""
+        userDisplayName = intent.getStringExtra("USER_DISPLAY_NAME")?.trim().orEmpty()
+        if (userDisplayName.isNotBlank()) {
+            AuthPreferences.setCachedDisplayName(this, userDisplayName, emailForCheck = userEmail)
+        }
         if (userId.isEmpty()) {
             Log.w(TAG, "No USER_ID received — passkey registration will fail")
         }
@@ -147,6 +153,19 @@ class PasskeyActivity : AppCompatActivity() {
                 }
 
                 val beginBody = beginResponse.body()!!
+                // Only consult the server's WebAuthn user.displayName when we have *nothing*
+                // cached locally. Even then, [setCachedDisplayName] will reject an email-handle.
+                val cachedDn = AuthPreferences.cachedDisplayName(this@PasskeyActivity).trim()
+                if (userDisplayName.isBlank() && cachedDn.isBlank()) {
+                    val fromServer = displayNameFromBeginResponse(beginBody)
+                    if (fromServer.isNotBlank()) {
+                        AuthPreferences.setCachedDisplayName(
+                            this@PasskeyActivity,
+                            fromServer,
+                            emailForCheck = userEmail
+                        )
+                    }
+                }
                 val sessionToken = beginBody.data?.sessionToken.orEmpty()
                 if (sessionToken.isBlank()) {
                     Toast.makeText(
@@ -392,6 +411,20 @@ class PasskeyActivity : AppCompatActivity() {
     }
 
     /** Prefer JSON `message` from Gin-style error bodies instead of dumping raw JSON. */
+    /** PublicKey `user.displayName` from `register/begin` (backend often sends the real name here). */
+    private fun displayNameFromBeginResponse(begin: BeginRegisterResponse): String {
+        val fromOptions = begin.data?.creationData?.publicKey
+        val user = fromOptions?.user ?: begin.user
+        if (user == null) return ""
+        val dn = user.displayName.trim()
+        val n = user.name.trim()
+        return when {
+            dn.isNotEmpty() -> dn
+            n.isNotEmpty() -> n
+            else -> ""
+        }
+    }
+
     private fun apiErrorUserMessage(body: String): String {
         return try {
             val o = JSONObject(body)

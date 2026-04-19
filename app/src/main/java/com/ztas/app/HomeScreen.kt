@@ -73,11 +73,19 @@ fun HomeScreen() {
                 }
                 val profile = profileRaw?.let { UserProfileJson.parse(it) }
                 if (profile != null) {
-                    welcomeTitle = "WELCOME, ${profile.name.uppercase(Locale.getDefault())}"
-                    welcomeSubtitle = "Signed in as ${profile.email}"
+                    val emailCheck = profile.email.ifBlank { AuthPreferences.cachedEmail(context) }
+                    val resolved =
+                        ProfileDisplayName.headerName(context, profile.name, profile.email)
+                    welcomeTitle = "WELCOME, ${resolved.uppercase(Locale.getDefault())}"
+                    welcomeSubtitle = "Signed in as $emailCheck"
+                    ProfileDisplayName.persistIfRichLabel(context, resolved, emailCheck)
                 } else {
                     val em = AuthPreferences.cachedEmail(context)
-                    if (em.isNotEmpty()) {
+                    val cachedName = AuthPreferences.cachedDisplayName(context).trim()
+                    if (cachedName.isNotEmpty()) {
+                        welcomeTitle = "WELCOME, ${cachedName.uppercase(Locale.getDefault())}"
+                        welcomeSubtitle = if (em.isNotEmpty()) "Signed in as $em" else welcomeSubtitle
+                    } else if (em.isNotEmpty()) {
                         welcomeTitle =
                             "WELCOME, ${em.substringBefore('@').uppercase(Locale.getDefault())}"
                         welcomeSubtitle = "Signed in as $em"
@@ -96,8 +104,8 @@ fun HomeScreen() {
                 val response = withContext(Dispatchers.IO) {
                     RetrofitClient.sessionApi.getSessions(bearer, limit = 20)
                 }
-                if (response.isSuccessful && response.body() != null) {
-                    sessions = response.body()!!.sessions
+                if (response.isSuccessful) {
+                    sessions = response.body()?.data?.sessions.orEmpty()
                 } else {
                     sessionsError = "Failed to load sessions"
                     Log.e("HomeScreen", "Sessions error: ${response.code()}")
@@ -119,8 +127,9 @@ fun HomeScreen() {
                         limit = 5
                     )
                 }
-                if (notifResponse.isSuccessful && notifResponse.body() != null) {
-                    activities = notifResponse.body()!!.notifications.map { it.toActivityItem() }
+                if (notifResponse.isSuccessful) {
+                    activities =
+                        notifResponse.body()?.data?.notifications.orEmpty().map { it.toActivityItem() }
                 } else {
                     Log.e("HomeScreen", "Notifications error: ${notifResponse.code()}")
                 }

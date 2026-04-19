@@ -38,6 +38,7 @@
 
     <!-- Device 1 -->
     <LinearLayout
+        android:id="@+id/device_row_1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -45,6 +46,7 @@
         android:gravity="center_vertical">
 
         <ImageView
+            android:id="@+id/device_icon_1"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/devices_icon"
@@ -59,6 +61,7 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/device_name_1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Adam's Samsung S24"
@@ -68,6 +71,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/device_status_1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Current Device"
@@ -82,6 +86,7 @@
 
     <!-- Device 2 -->
     <LinearLayout
+        android:id="@+id/device_row_2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -89,6 +94,7 @@
         android:gravity="center_vertical">
 
         <ImageView
+            android:id="@+id/device_icon_2"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/devices_icon"
@@ -103,6 +109,7 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/device_name_2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="John's iPhone"
@@ -112,6 +119,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/device_status_2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Last active: 5 hours ago"

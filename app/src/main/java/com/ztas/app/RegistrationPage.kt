@@ -196,6 +196,13 @@ class RegistrationPage : AppCompatActivity() {
 
                     Log.d(TAG, "Registration success: $resolvedMessage, userId=$resolvedUserId")
 
+                    // Persist immediately so profile/home can show the real name even if OTP/passkey extras fail.
+                    AuthPreferences.setCachedDisplayName(
+                        this@RegistrationPage,
+                        name,
+                        emailForCheck = email
+                    )
+
                     Toast.makeText(
                         this@RegistrationPage,
                         resolvedMessage,
@@ -207,6 +214,7 @@ class RegistrationPage : AppCompatActivity() {
                         putExtra("USER_ID", resolvedUserId)
                         putExtra("USER_EMAIL", email)
                         putExtra("USER_PHONE", phone)
+                        putExtra("USER_DISPLAY_NAME", name)
                     }
                     startActivity(intent)
                     // Do not finish(): keep Registration in the back stack so Back from OTP returns here.

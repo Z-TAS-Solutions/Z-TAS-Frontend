@@ -112,8 +112,8 @@ class NotificationPage : AppCompatActivity() {
                     )
                 }
 
-                if (response.isSuccessful && response.body() != null) {
-                    val apiNotifications = response.body()!!.notifications
+                if (response.isSuccessful) {
+                    val apiNotifications = response.body()?.data?.notifications.orEmpty()
                     allNotifications.clear()
                     allNotifications.addAll(apiNotifications.map { it.toLocalNotification() })
                     selectTab(currentFilter)
@@ -196,6 +196,17 @@ class NotificationPage : AppCompatActivity() {
      * Marks all notifications as read via PATCH /user/notifications/read-all.
      */
     private fun markAllAsRead() {
+        val unreadCount = allNotifications.count { !it.isRead }
+        if (unreadCount == 0) {
+            Toast.makeText(
+                this@NotificationPage,
+                if (allNotifications.isEmpty()) "No notifications yet"
+                else "You're all caught up — nothing to mark as read",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val token = AuthPreferences.bearerOrNull(this@NotificationPage) ?: return@launch
@@ -214,7 +225,12 @@ class NotificationPage : AppCompatActivity() {
                     Toast.makeText(this@NotificationPage, "All marked as read", Toast.LENGTH_SHORT).show()
                 } else {
                     Log.e(TAG, "Mark all read failed: ${response.code()}")
-                    Toast.makeText(this@NotificationPage, "Failed to mark all as read", Toast.LENGTH_SHORT).show()
+                    val msg = when (response.code()) {
+                        500 -> "You're all caught up — nothing to mark as read"
+                        401, 403 -> "Session expired, please sign in again"
+                        else -> "Failed to mark all as read"
+                    }
+                    Toast.makeText(this@NotificationPage, msg, Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Mark all read error", e)
