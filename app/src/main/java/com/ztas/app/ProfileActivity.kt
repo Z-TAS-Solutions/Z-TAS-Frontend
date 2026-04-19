@@ -3,6 +3,7 @@ package com.ztas.app
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.Button
@@ -11,35 +12,27 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.isGone
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.GetPublicKeyCredentialOption
-import androidx.credentials.PublicKeyCredential
-import androidx.credentials.exceptions.GetCredentialException
-import com.ztas.app.network.AssertionResponseBody
-import com.ztas.app.network.BeginLoginRequest
+import androidx.lifecycle.lifecycleScope
 import com.ztas.app.network.DeleteAccountRequest
-import com.ztas.app.network.FinishLoginRequest
 import com.ztas.app.network.RetrofitClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
 import java.io.File
 
 class ProfileActivity : AppCompatActivity() {
 
     private val userApi = RetrofitClient.userApi
     private val sessionApi = RetrofitClient.sessionApi
-    private val webAuthnApi = RetrofitClient.webAuthnApi
-    private lateinit var credentialManager: CredentialManager
+    private val passkeyCredentialManager by lazy { CredentialManager.create(this) }
 
     private val pickProfileImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -59,8 +52,6 @@ class ProfileActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile_host)
-
-        credentialManager = CredentialManager.create(this)
 
         // Initialize Compose Bottom Nav
         val composeView = findViewById<ComposeView>(R.id.compose_bottom_nav)
@@ -111,32 +102,18 @@ class ProfileActivity : AppCompatActivity() {
      */
     private fun applyCachedIdentity() {
         val cachedEmail = AuthPreferences.cachedEmail(this)
-        val cachedName = AuthPreferences.cachedName(this)
         val emailView = findViewById<TextView>(R.id.useremail)
         val nameView = findViewById<TextView>(R.id.username)
 
         if (cachedEmail.isNotBlank()) {
             emailView.text = cachedEmail
         }
-        // Prefer the real name captured at registration; fall back to an
-        // email-derived guess only if no name was ever stored.
-        nameView.text = when {
-            cachedName.isNotBlank() -> cachedName
-            cachedEmail.isNotBlank() -> displayNameFromEmail(cachedEmail)
-            else -> nameView.text
+        val cachedName = AuthPreferences.cachedDisplayName(this).trim()
+        if (cachedName.isNotBlank()) {
+            nameView.text = cachedName
+        } else if (cachedEmail.isNotBlank()) {
+            nameView.text = ProfileDisplayName.displayNameFromEmail(cachedEmail)
         }
-    }
-
-    /** Turns "ravi.kumar@example.com" → "Ravi Kumar" as a friendly fallback. */
-    private fun displayNameFromEmail(email: String): String {
-        val local = email.substringBefore('@', missingDelimiterValue = email)
-        if (local.isBlank()) return "User"
-        return local
-            .split('.', '_', '-', '+')
-            .filter { it.isNotBlank() }
-            .joinToString(" ") { part ->
-                part.replaceFirstChar { c -> if (c.isLowerCase()) c.titlecase() else c.toString() }
-            }
     }
 
     private fun authHeaderOrNull(): String? = AuthPreferences.bearerOrNull(this)
@@ -173,10 +150,12 @@ class ProfileActivity : AppCompatActivity() {
                 val profile = raw?.let { UserProfileJson.parse(it) }
 
                 if (response.isSuccessful && profile != null) {
-                    if (profile.name.isNotBlank()) {
-                        findViewById<TextView>(R.id.username).text = profile.name
-                        AuthPreferences.setCachedName(this@ProfileActivity, profile.name)
-                    }
+                    val resolved =
+                        ProfileDisplayName.headerName(this@ProfileActivity, profile.name, profile.email)
+                    findViewById<TextView>(R.id.username).text = resolved
+                    val emailForCheck =
+                        profile.email.ifBlank { AuthPreferences.cachedEmail(this@ProfileActivity) }
+                    ProfileDisplayName.persistIfRichLabel(this@ProfileActivity, resolved, emailForCheck)
                     if (profile.email.isNotBlank()) {
                         findViewById<TextView>(R.id.useremail).text = profile.email
                     }
@@ -203,10 +182,11 @@ class ProfileActivity : AppCompatActivity() {
 
     private fun getLastSyncText(timestampMs: Long): String {
         val now = System.currentTimeMillis()
-        val diffMs = now - timestampMs
+        val tsMs = normalizeEpochMillis(timestampMs)
+        val diffMs = now - tsMs
 
         // If the timestamp is 0 or negative (which means it wasn't returned or is invalid), say "Just now"
-        if (timestampMs <= 0L) return "Just now"
+        if (tsMs <= 0L) return "Just now"
 
         val diffMin = diffMs / 60_000
         val diffHr = diffMs / 3_600_000
@@ -218,6 +198,57 @@ class ProfileActivity : AppCompatActivity() {
             diffHr < 24 -> "${diffHr}h ago"
             else -> "${diffDay}d ago"
         }
+    }
+
+    private fun normalizeEpochMillis(value: Long): Long {
+        if (value <= 0L) return value
+        // Heuristic: seconds since epoch are ~1e9..1e10; millis are ~1e12..1e13
+        return if (value in 1..9_999_999_999L) value * 1000L else value
+    }
+
+    private fun looksGenericDeviceName(raw: String): Boolean {
+        val v = raw.trim().lowercase()
+        if (v.isBlank()) return true
+        return v.startsWith("okhttp/") ||
+            v == "android" ||
+            v == "unknown" ||
+            v == "mobile"
+    }
+
+    private fun localDeviceLabel(): String {
+        val brand = Build.BRAND.orEmpty().trim()
+        val model = Build.MODEL.orEmpty().trim()
+        return listOf(brand, model).filter { it.isNotBlank() }.joinToString(" ")
+            .ifBlank { "This device" }
+    }
+
+    private fun inferFriendlyDeviceLabel(rawName: String): String {
+        val v = rawName.trim().lowercase()
+        if (v.isBlank()) return "Other device"
+
+        return when {
+            "iphone" in v || "ipad" in v || "ios" in v -> "iPhone"
+            "windows" in v -> "Windows PC"
+            "mac os" in v || "macos" in v || "macintosh" in v -> "Mac"
+            "linux" in v -> "Linux device"
+            "android" in v ||
+                "samsung" in v ||
+                "oppo" in v ||
+                "vivo" in v ||
+                "xiaomi" in v ||
+                "redmi" in v ||
+                "oneplus" in v ||
+                "pixel" in v ||
+                "huawei" in v -> "Android phone"
+            "mozilla/" in v || "chrome/" in v || "safari/" in v || "firefox/" in v -> "Web browser"
+            looksGenericDeviceName(v) -> "Android phone"
+            else -> rawName.trim()
+        }
+    }
+
+    private fun displayDeviceName(rawName: String, isCurrent: Boolean): String {
+        if (isCurrent && looksGenericDeviceName(rawName)) return localDeviceLabel()
+        return inferFriendlyDeviceLabel(rawName)
     }
 
     private fun showActiveSessionsDialog() {
@@ -236,8 +267,35 @@ class ProfileActivity : AppCompatActivity() {
         val closeBtn = dialogView.findViewById<Button>(R.id.closesignout_id)
         val signOutOtherBtn = dialogView.findViewById<Button>(R.id.signout_otherid)
 
-        // Temporarily, we will set the static XML text fields to dynamic data by fetching from API
-        // Then we'll update the values. Our XML has two static devices. We will populate as many as we can fit.
+        val row1 = dialogView.findViewById<LinearLayout>(R.id.device_row_1)
+        val row2 = dialogView.findViewById<LinearLayout>(R.id.device_row_2)
+        val name1 = dialogView.findViewById<TextView>(R.id.device_name_1)
+        val status1 = dialogView.findViewById<TextView>(R.id.device_status_1)
+        val icon1 = dialogView.findViewById<ImageView>(R.id.device_icon_1)
+        val name2 = dialogView.findViewById<TextView>(R.id.device_name_2)
+        val status2 = dialogView.findViewById<TextView>(R.id.device_status_2)
+        val icon2 = dialogView.findViewById<ImageView>(R.id.device_icon_2)
+
+        fun bindRow(
+            deviceNameView: TextView,
+            statusView: TextView,
+            iconView: ImageView,
+            deviceName: String,
+            isCurrent: Boolean,
+            lastActive: Long
+        ) {
+            deviceNameView.text = deviceName.ifBlank { "Unknown device" }
+            if (isCurrent) {
+                statusView.text = "Current Device"
+                statusView.setTextColor(android.graphics.Color.parseColor("#00ccff"))
+                iconView.setColorFilter(android.graphics.Color.parseColor("#00ccff"))
+            } else {
+                statusView.text = "Last active: ${getLastSyncText(lastActive)}"
+                statusView.setTextColor(android.graphics.Color.parseColor("#888888"))
+                iconView.setColorFilter(android.graphics.Color.parseColor("#888888"))
+            }
+        }
+
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val token = authHeaderOrNull() ?: return@launch
@@ -247,10 +305,39 @@ class ProfileActivity : AppCompatActivity() {
 
                 if (response.isSuccessful) {
                     val sessions = response.body()?.data?.sessions.orEmpty()
-                    // In a real scenario, this dialog should use a RecyclerView or Compose for dynamic counts.
-                    // For now, let's keep it simple: we know our XML has two hardcoded blocks. 
-                    // This serves as an immediate visual update without massive UI changes to the static XML.
-                    Log.d(TAG, "Loaded ${sessions.size} sessions")
+                    val first = sessions.getOrNull(0)
+                    val second = sessions.getOrNull(1)
+
+                    if (first != null) {
+                        row1.isGone = false
+                        bindRow(
+                            deviceNameView = name1,
+                            statusView = status1,
+                            iconView = icon1,
+                            deviceName = displayDeviceName(first.deviceName, first.current),
+                            isCurrent = first.current,
+                            lastActive = first.lastActive
+                        )
+                    } else {
+                        row1.isGone = true
+                    }
+
+                    if (second != null) {
+                        row2.isGone = false
+                        bindRow(
+                            deviceNameView = name2,
+                            statusView = status2,
+                            iconView = icon2,
+                            deviceName = displayDeviceName(second.deviceName, second.current),
+                            isCurrent = second.current,
+                            lastActive = second.lastActive
+                        )
+                    } else {
+                        row2.isGone = true
+                    }
+
+                    // Disable "Sign Out Other" when there's no other device.
+                    signOutOtherBtn.isEnabled = sessions.any { !it.current }
                 } else {
                     Log.e(TAG, "Failed to load sessions: ${response.code()}")
                 }
@@ -379,216 +466,71 @@ class ProfileActivity : AppCompatActivity() {
 
         deleteBtn.setOnClickListener {
             deleteBtn.isEnabled = false
-            val originalText = deleteBtn.text
-            deleteBtn.text = "VERIFYING…"
 
-            CoroutineScope(Dispatchers.Main).launch {
+            lifecycleScope.launch {
                 try {
-                    val token = authHeaderOrNull()
-                    val email = AuthPreferences.cachedEmail(this@ProfileActivity)
-                    if (token == null || email.isBlank()) {
-                        Toast.makeText(
-                            this@ProfileActivity,
-                            "Session expired. Please sign in again.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        deleteBtn.text = originalText
-                        deleteBtn.isEnabled = true
-                        return@launch
-                    }
-
-                    // Step 1: re-authenticate with the user's passkey before destroying the account.
-                    val verified = verifyWithPasskey(email)
-                    if (!verified) {
-                        deleteBtn.text = originalText
-                        deleteBtn.isEnabled = true
-                        return@launch
-                    }
-
-                    deleteBtn.text = "DELETING…"
-
-                    // Step 2: actually delete. Password is omitted now that the user proved
-                    // ownership with their passkey.
-                    val response = withContext(Dispatchers.IO) {
-                        userApi.deleteAccount(
-                            token = token,
-                            request = DeleteAccountRequest()
-                        )
-                    }
-
-                    if (response.isSuccessful) {
-                        Toast.makeText(
-                            this@ProfileActivity,
-                            "Account deleted successfully",
-                            Toast.LENGTH_LONG
-                        ).show()
-                        dialog.dismiss()
-                        AuthPreferences.clear(this@ProfileActivity)
-                        startActivity(Intent(this@ProfileActivity, LoginActivity::class.java).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        })
-                        finish()
-                    } else {
-                        val errBody = response.errorBody()?.string().orEmpty()
-                        Log.e(TAG, "Delete account failed: ${response.code()} body=$errBody")
-                        val msg = when (response.code()) {
-                            401, 403 -> "Passkey verification expired. Please try again."
-                            else -> "Failed to delete account. Please try again."
+                    val emailOrNull = AuthPreferences.cachedEmail(this@ProfileActivity).trim().ifEmpty { null }
+                    val passkeyOutcome = WebAuthnLoginFlow.authenticate(
+                        activity = this@ProfileActivity,
+                        credentialManager = passkeyCredentialManager,
+                        emailOrNull = emailOrNull
+                    )
+                    when (passkeyOutcome) {
+                        is WebAuthnLoginFlow.PasskeyOutcome.Error -> {
+                            Toast.makeText(this@ProfileActivity, passkeyOutcome.message, Toast.LENGTH_LONG).show()
+                            deleteBtn.isEnabled = true
                         }
-                        Toast.makeText(this@ProfileActivity, msg, Toast.LENGTH_LONG).show()
-                        deleteBtn.text = originalText
-                        deleteBtn.isEnabled = true
+                        is WebAuthnLoginFlow.PasskeyOutcome.Success -> {
+                            val bearer = WebAuthnLoginFlow.bearerHeaderForToken(passkeyOutcome.data.token)
+                            val response = withContext(Dispatchers.IO) {
+                                val req = DeleteAccountRequest("")
+                                val del = userApi.deleteAccountDelete(token = bearer, request = req)
+                                if (del.code() != 404) return@withContext del
+                                val post = userApi.deleteAccountPost(token = bearer, request = req)
+                                // If both are 404, keep POST response (latest) but log both upstream.
+                                post
+                            }
+                            if (response.isSuccessful) {
+                                Toast.makeText(this@ProfileActivity, "Account deleted successfully", Toast.LENGTH_LONG).show()
+                                dialog.dismiss()
+                                AuthPreferences.clear(this@ProfileActivity)
+                                startActivity(Intent(this@ProfileActivity, LoginActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                })
+                                finish()
+                            } else {
+                                val errorBody = runCatching { response.errorBody()?.string().orEmpty() }.getOrDefault("")
+                                Log.e(
+                                    TAG,
+                                    "Delete account failed. Tried: DELETE user/account/delete then POST user/account/delete. " +
+                                        "Final status=${response.code()} body=$errorBody"
+                                )
+                                val message = when {
+                                    response.code() == 404 ->
+                                        "Delete failed: backend route not found (tried DELETE+POST `user/account/delete`)."
+                                    errorBody.contains("password", ignoreCase = true) ->
+                                        "Delete failed: backend still requires password confirmation."
+                                    errorBody.contains("unauthorized", ignoreCase = true) ||
+                                        response.code() == 401 ->
+                                        "Delete failed: passkey was accepted, but the delete API rejected authorization."
+                                    errorBody.isNotBlank() ->
+                                        "Delete failed: $errorBody"
+                                    else ->
+                                        "Failed to delete account (${response.code()})"
+                                }
+                                Toast.makeText(this@ProfileActivity, message, Toast.LENGTH_LONG).show()
+                                deleteBtn.isEnabled = true
+                            }
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error deleting account", e)
                     Toast.makeText(this@ProfileActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                    deleteBtn.text = originalText
                     deleteBtn.isEnabled = true
                 }
             }
         }
 
         dialog.show()
-    }
-
-    // ───────────────────────────────────────────────────────────────────
-    // WebAuthn re-authentication for sensitive actions (e.g. delete account)
-    // ───────────────────────────────────────────────────────────────────
-
-    /**
-     * Runs the same passkey ceremony used at login (`/webauthn/login/begin` →
-     * CredentialManager → `/webauthn/login/finish`) purely as a re-authentication
-     * gate. Returns `true` only when the server validates the assertion.
-     */
-    private suspend fun verifyWithPasskey(email: String): Boolean {
-        return try {
-            val begin = withContext(Dispatchers.IO) {
-                webAuthnApi.beginLogin(BeginLoginRequest(email = email))
-            }
-            if (!begin.isSuccessful || begin.body() == null) {
-                val err = begin.errorBody()?.string().orEmpty()
-                Log.e(TAG, "Passkey begin failed: ${begin.code()} — $err")
-                Toast.makeText(this, "Couldn't start passkey check. Please try again.", Toast.LENGTH_LONG).show()
-                return false
-            }
-
-            val parsed = parseLoginBeginPayload(begin.body()!!.string()) ?: run {
-                Log.e(TAG, "Passkey begin: could not parse server response")
-                Toast.makeText(this, "Passkey check failed (bad server response).", Toast.LENGTH_LONG).show()
-                return false
-            }
-
-            val getJson = JSONObject().apply {
-                put("challenge", parsed.challenge)
-                put("rpId", parsed.rpId)
-                put("timeout", parsed.timeout)
-                put("userVerification", parsed.userVerification)
-                put("allowCredentials", parsed.allowCredentials)
-            }.toString()
-
-            val getRequest = GetCredentialRequest(listOf(GetPublicKeyCredentialOption(getJson)))
-            val result = credentialManager.getCredential(this@ProfileActivity, getRequest)
-            val credential = result.credential as? PublicKeyCredential ?: run {
-                Toast.makeText(this, "Unexpected credential type.", Toast.LENGTH_SHORT).show()
-                return false
-            }
-
-            val assertionJson = JSONObject(credential.authenticationResponseJson)
-            val responseObj = assertionJson.getJSONObject("response")
-            val finishRequest = FinishLoginRequest(
-                id = assertionJson.getString("id"),
-                rawId = assertionJson.getString("rawId"),
-                response = AssertionResponseBody(
-                    authenticatorData = responseObj.getString("authenticatorData"),
-                    clientDataJSON = responseObj.getString("clientDataJSON"),
-                    signature = responseObj.getString("signature"),
-                    userHandle = responseObj.optString("userHandle", "")
-                ),
-                type = assertionJson.optString("type", "public-key")
-            )
-
-            val finish = withContext(Dispatchers.IO) {
-                webAuthnApi.finishLogin(sessionToken = parsed.sessionToken, request = finishRequest)
-            }
-            if (!finish.isSuccessful) {
-                val err = finish.errorBody()?.string().orEmpty()
-                Log.e(TAG, "Passkey finish failed: ${finish.code()} — $err")
-                Toast.makeText(this, "Passkey verification failed. Please try again.", Toast.LENGTH_LONG).show()
-                return false
-            }
-            true
-        } catch (e: GetCredentialException) {
-            Log.e(TAG, "Passkey verification cancelled / failed", e)
-            Toast.makeText(this, "Passkey verification was cancelled.", Toast.LENGTH_SHORT).show()
-            false
-        } catch (e: Exception) {
-            Log.e(TAG, "Passkey verification error", e)
-            Toast.makeText(this, "Passkey error: ${e.message}", Toast.LENGTH_SHORT).show()
-            false
-        }
-    }
-
-    private data class ParsedLoginBegin(
-        val sessionToken: String,
-        val challenge: String,
-        val rpId: String,
-        val timeout: Long,
-        val userVerification: String,
-        val allowCredentials: JSONArray
-    )
-
-    /** Mirror of [LoginActivity.parseLoginBeginPayload] kept local so the two flows can evolve independently. */
-    private fun parseLoginBeginPayload(raw: String): ParsedLoginBegin? {
-        return try {
-            val root = JSONObject(raw)
-            val data = root.optJSONObject("data")
-            val sessionToken = sequenceOf(
-                data?.optString("session_token").orEmpty(),
-                data?.optString("sessionToken").orEmpty(),
-                root.optString("session_token"),
-                root.optString("sessionToken")
-            ).firstOrNull { it.isNotEmpty() } ?: return null
-
-            val candidates = mutableListOf<JSONObject>()
-            fun add(obj: JSONObject?) { if (obj != null) candidates.add(obj) }
-            data?.let { d ->
-                add(d.optJSONObject("assertion_data"))
-                add(d.optJSONObject("assertionData"))
-                add(d.optJSONObject("assertion"))
-                add(d.optJSONObject("publicKey"))
-                add(d.optJSONObject("options"))
-            }
-            add(root.optJSONObject("assertion_data"))
-            add(root.optJSONObject("publicKey"))
-
-            for (assertion in candidates) {
-                val opts = assertion.optJSONObject("response")
-                    ?: assertion.optJSONObject("publicKey")
-                    ?: assertion
-                buildParsedBegin(opts, sessionToken)?.let { return it }
-            }
-            data?.let { buildParsedBegin(it, sessionToken) }
-        } catch (e: Exception) {
-            Log.e(TAG, "parseLoginBeginPayload", e)
-            null
-        }
-    }
-
-    private fun buildParsedBegin(options: JSONObject, sessionToken: String): ParsedLoginBegin? {
-        val challenge = options.optString("challenge").ifEmpty { options.optString("Challenge") }
-        if (challenge.isEmpty()) return null
-        var rpId = options.optString("rpId").ifEmpty { options.optString("rp_id") }
-        if (rpId.isEmpty()) rpId = options.optJSONObject("rp")?.optString("id").orEmpty()
-        if (rpId.isEmpty()) return null
-        val timeout = if (options.has("timeout") && !options.isNull("timeout"))
-            options.optLong("timeout", 120_000L).takeIf { it > 0 } ?: 120_000L
-        else 120_000L
-        val uv = options.optString("userVerification").ifEmpty {
-            options.optString("user_verification")
-        }.ifEmpty { "required" }
-        val allow = options.optJSONArray("allowCredentials")
-            ?: options.optJSONArray("allow_credentials")
-            ?: JSONArray()
-        return ParsedLoginBegin(sessionToken, challenge, rpId, timeout, uv, allow)
     }
 }

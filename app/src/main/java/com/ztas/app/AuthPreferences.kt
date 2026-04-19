@@ -14,16 +14,25 @@ object AuthPreferences {
     private const val KEY_NAME = "name"
     private const val KEY_ROLE = "role"
     private const val KEY_PROFILE_IMAGE_PATH = "profile_image_path"
+    /** Full name from registration (or login payload); used for UI before/without profile API. */
+    private const val KEY_DISPLAY_NAME = "display_name"
 
     private fun prefs(ctx: Context) = ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun saveSession(context: Context, accessToken: String, userId: String, email: String, role: String) {
-        prefs(context).edit()
+        val p = prefs(context)
+        val prevUserId = p.getString(KEY_USER_ID, "").orEmpty().trim()
+        val nextUserId = userId.trim()
+        val e = p.edit()
             .putString(KEY_ACCESS_TOKEN, accessToken.trim())
-            .putString(KEY_USER_ID, userId)
+            .putString(KEY_USER_ID, nextUserId)
             .putString(KEY_EMAIL, email)
             .putString(KEY_ROLE, role)
-            .apply()
+        // Avoid showing one user's saved full name after a different account signs in.
+        if (prevUserId.isNotEmpty() && nextUserId.isNotEmpty() && prevUserId != nextUserId) {
+            e.remove(KEY_DISPLAY_NAME)
+        }
+        e.apply()
     }
 
     fun bearerOrNull(context: Context): String? {
@@ -34,6 +43,16 @@ object AuthPreferences {
 
     fun cachedEmail(context: Context): String =
         prefs(context).getString(KEY_EMAIL, "").orEmpty()
+
+    fun cachedDisplayName(context: Context): String =
+        prefs(context).getString(KEY_DISPLAY_NAME, "").orEmpty()
+
+    fun setCachedDisplayName(context: Context, value: String?) {
+        val e = prefs(context).edit()
+        if (value.isNullOrBlank()) e.remove(KEY_DISPLAY_NAME)
+        else e.putString(KEY_DISPLAY_NAME, value.trim())
+        e.apply()
+    }
 
     fun cachedUserId(context: Context): String =
         prefs(context).getString(KEY_USER_ID, "").orEmpty()
