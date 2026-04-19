@@ -88,7 +88,35 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         applySavedProfilePhoto()
+        applyCachedIdentity()
         loadProfileData()
+    }
+
+    /**
+     * Renders username + email immediately from local cache so the header is never empty
+     * (even if /user/profile is slow or returns 404). Real values overwrite these once the API responds.
+     */
+    private fun applyCachedIdentity() {
+        val cachedEmail = AuthPreferences.cachedEmail(this)
+        val emailView = findViewById<TextView>(R.id.useremail)
+        val nameView = findViewById<TextView>(R.id.username)
+
+        if (cachedEmail.isNotBlank()) {
+            emailView.text = cachedEmail
+            nameView.text = displayNameFromEmail(cachedEmail)
+        }
+    }
+
+    /** Turns "ravi.kumar@example.com" → "Ravi Kumar" as a friendly fallback. */
+    private fun displayNameFromEmail(email: String): String {
+        val local = email.substringBefore('@', missingDelimiterValue = email)
+        if (local.isBlank()) return "User"
+        return local
+            .split('.', '_', '-', '+')
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { part ->
+                part.replaceFirstChar { c -> if (c.isLowerCase()) c.titlecase() else c.toString() }
+            }
     }
 
     private fun authHeaderOrNull(): String? = AuthPreferences.bearerOrNull(this)
@@ -125,8 +153,12 @@ class ProfileActivity : AppCompatActivity() {
                 val profile = raw?.let { UserProfileJson.parse(it) }
 
                 if (response.isSuccessful && profile != null) {
-                    findViewById<TextView>(R.id.username).text = profile.name
-                    findViewById<TextView>(R.id.useremail).text = profile.email
+                    if (profile.name.isNotBlank()) {
+                        findViewById<TextView>(R.id.username).text = profile.name
+                    }
+                    if (profile.email.isNotBlank()) {
+                        findViewById<TextView>(R.id.useremail).text = profile.email
+                    }
                     findViewById<TextView>(R.id.status).text = "STATUS: ${profile.status.uppercase()}"
                     findViewById<TextView>(R.id.activeDevicesCount).text =
                         "${profile.activeDevices} devices connected"
@@ -135,7 +167,11 @@ class ProfileActivity : AppCompatActivity() {
                     findViewById<TextView>(R.id.securityLevel).text = profile.securityLevel.uppercase()
                 } else {
                     Log.e(TAG, "Failed to load profile: ${response.code()} body=$raw")
-                    Toast.makeText(this@ProfileActivity, "Failed to load profile", Toast.LENGTH_SHORT).show()
+                    // Keep cached username/email already shown by applyCachedIdentity().
+                    // Only surface a toast for unexpected errors, not for 404 "no profile" cases.
+                    if (response.code() != 404) {
+                        Toast.makeText(this@ProfileActivity, "Failed to load profile", Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading profile", e)
