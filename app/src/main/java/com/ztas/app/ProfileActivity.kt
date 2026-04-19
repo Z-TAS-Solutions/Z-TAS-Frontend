@@ -188,8 +188,8 @@ class ProfileActivity : AppCompatActivity() {
                     sessionApi.getSessions(token, limit = 5)
                 }
 
-                if (response.isSuccessful && response.body() != null) {
-                    val sessions = response.body()!!.sessions
+                if (response.isSuccessful) {
+                    val sessions = response.body()?.data?.sessions.orEmpty()
                     // In a real scenario, this dialog should use a RecyclerView or Compose for dynamic counts.
                     // For now, let's keep it simple: we know our XML has two hardcoded blocks. 
                     // This serves as an immediate visual update without massive UI changes to the static XML.

@@ -195,9 +195,15 @@ data class FinishRegisterResponse(
 // Sessions
 // ═══════════════════════════════════════════════════════════════
 
+/** GET /user/sessions envelope: `{ "data": { "sessions", "pagination" }, "message" }` */
+data class SessionsApiEnvelope(
+    val data: SessionsResponse? = null,
+    val message: String? = null
+)
+
 data class SessionsResponse(
-    val sessions: List<SessionData>,
-    val pagination: Pagination
+    val sessions: List<SessionData>? = null,
+    val pagination: Pagination? = null
 )
 
 data class SessionData(
@@ -218,9 +224,15 @@ data class Pagination(
 // Notifications
 // ═══════════════════════════════════════════════════════════════
 
+/** GET /user/notifications envelope: `{ "message", "data": { "notifications", "pagination" } }` */
+data class NotificationsApiEnvelope(
+    val data: NotificationsResponse? = null,
+    val message: String? = null
+)
+
 data class NotificationsResponse(
-    val notifications: List<NotificationData>,
-    val pagination: Pagination
+    val notifications: List<NotificationData>? = null,
+    val pagination: Pagination? = null
 )
 
 data class NotificationData(
