@@ -373,10 +373,13 @@ class ProfileActivity : AppCompatActivity() {
                         is WebAuthnLoginFlow.PasskeyOutcome.Success -> {
                             val bearer = WebAuthnLoginFlow.bearerHeaderForToken(passkeyOutcome.data.token)
                             val response = withContext(Dispatchers.IO) {
-                                userApi.deleteAccount(
-                                    token = bearer,
-                                    request = DeleteAccountRequest("")
-                                )
+                                val req = DeleteAccountRequest("")
+                                val del = userApi.deleteAccountDelete(token = bearer, request = req)
+                                if (del.code() == 404) {
+                                    userApi.deleteAccountPost(token = bearer, request = req)
+                                } else {
+                                    del
+                                }
                             }
                             if (response.isSuccessful) {
                                 Toast.makeText(this@ProfileActivity, "Account deleted successfully", Toast.LENGTH_LONG).show()
@@ -387,8 +390,20 @@ class ProfileActivity : AppCompatActivity() {
                                 })
                                 finish()
                             } else {
-                                Log.e(TAG, "Delete account failed: ${response.code()}")
-                                Toast.makeText(this@ProfileActivity, "Failed to delete account", Toast.LENGTH_LONG).show()
+                                val errorBody = runCatching { response.errorBody()?.string().orEmpty() }.getOrDefault("")
+                                Log.e(TAG, "Delete account failed: ${response.code()} - $errorBody")
+                                val message = when {
+                                    errorBody.contains("password", ignoreCase = true) ->
+                                        "Delete failed: backend still requires password confirmation."
+                                    errorBody.contains("unauthorized", ignoreCase = true) ||
+                                        response.code() == 401 ->
+                                        "Delete failed: passkey was accepted, but the delete API rejected authorization."
+                                    errorBody.isNotBlank() ->
+                                        "Delete failed: $errorBody"
+                                    else ->
+                                        "Failed to delete account (${response.code()})"
+                                }
+                                Toast.makeText(this@ProfileActivity, message, Toast.LENGTH_LONG).show()
                                 deleteBtn.isEnabled = true
                             }
                         }
