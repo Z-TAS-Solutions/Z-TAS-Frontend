@@ -27,4 +27,18 @@ interface WebAuthnApi {
         @Header("X-Session-Token") sessionToken: String,
         @Body request: FinishRegisterRequest
     ): Response<FinishRegisterResponse>
+
+    // ── Authenticated user enroll additional passkey ───────────
+    @POST("user/passkey/enroll/begin")
+    suspend fun beginEnrollPasskey(
+        @Header("Authorization") token: String
+    ): Response<ResponseBody>
+
+    @POST("user/passkey/enroll/finish")
+    suspend fun finishEnrollPasskey(
+        @Header("Authorization") token: String,
+        @Header("X-Session-Token") sessionToken: String,
+        @Header("X-Authenticator-Name") authenticatorName: String? = null,
+        @Body request: FinishRegisterRequest
+    ): Response<ResponseBody>
 }
