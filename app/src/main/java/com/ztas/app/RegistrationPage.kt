@@ -207,6 +207,7 @@ class RegistrationPage : AppCompatActivity() {
                         putExtra("USER_ID", resolvedUserId)
                         putExtra("USER_EMAIL", email)
                         putExtra("USER_PHONE", phone)
+                        putExtra("USER_DISPLAY_NAME", name)
                     }
                     startActivity(intent)
                     // Do not finish(): keep Registration in the back stack so Back from OTP returns here.

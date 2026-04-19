@@ -214,6 +214,9 @@ class LoginActivity : AppCompatActivity() {
                     email = finishData.email,
                     role = finishData.role
                 )
+                if (finishData.displayName.isNotBlank()) {
+                    AuthPreferences.setCachedDisplayName(this@LoginActivity, finishData.displayName)
+                }
 
                 Toast.makeText(this@LoginActivity, "Login Successful!", Toast.LENGTH_SHORT).show()
                 startActivity(Intent(this@LoginActivity, HomeActivity::class.java).apply {
@@ -267,7 +270,8 @@ class LoginActivity : AppCompatActivity() {
         val token: String,
         val userId: String,
         val role: String,
-        val email: String
+        val email: String,
+        val displayName: String = ""
     )
 
     private fun serverMessageFromJson(raw: String): String {
@@ -370,7 +374,14 @@ class LoginActivity : AppCompatActivity() {
             }
             val role = data.optString("role").ifEmpty { "Client" }
             val email = data.optString("email")
-            ParsedLoginFinish(token, userId, role, email)
+            val displayName = sequenceOf(
+                data.optString("full_name"),
+                data.optString("fullName"),
+                data.optString("display_name"),
+                data.optString("displayName"),
+                data.optString("name")
+            ).map { it.trim() }.firstOrNull { it.isNotEmpty() }.orEmpty()
+            ParsedLoginFinish(token, userId, role, email, displayName)
         } catch (e: Exception) {
             Log.e(TAG, "parseLoginFinishPayload", e)
             null

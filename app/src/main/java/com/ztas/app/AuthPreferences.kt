@@ -13,6 +13,8 @@ object AuthPreferences {
     private const val KEY_EMAIL = "email"
     private const val KEY_ROLE = "role"
     private const val KEY_PROFILE_IMAGE_PATH = "profile_image_path"
+    /** Full name from registration (or login payload); used for UI before/without profile API. */
+    private const val KEY_DISPLAY_NAME = "display_name"
 
     private fun prefs(ctx: Context) = ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
@@ -33,6 +35,16 @@ object AuthPreferences {
 
     fun cachedEmail(context: Context): String =
         prefs(context).getString(KEY_EMAIL, "").orEmpty()
+
+    fun cachedDisplayName(context: Context): String =
+        prefs(context).getString(KEY_DISPLAY_NAME, "").orEmpty()
+
+    fun setCachedDisplayName(context: Context, value: String?) {
+        val e = prefs(context).edit()
+        if (value.isNullOrBlank()) e.remove(KEY_DISPLAY_NAME)
+        else e.putString(KEY_DISPLAY_NAME, value.trim())
+        e.apply()
+    }
 
     fun cachedUserId(context: Context): String =
         prefs(context).getString(KEY_USER_ID, "").orEmpty()

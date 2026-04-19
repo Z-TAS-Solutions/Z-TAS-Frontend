@@ -77,7 +77,11 @@ fun HomeScreen() {
                     welcomeSubtitle = "Signed in as ${profile.email}"
                 } else {
                     val em = AuthPreferences.cachedEmail(context)
-                    if (em.isNotEmpty()) {
+                    val cachedName = AuthPreferences.cachedDisplayName(context).trim()
+                    if (cachedName.isNotEmpty()) {
+                        welcomeTitle = "WELCOME, ${cachedName.uppercase(Locale.getDefault())}"
+                        welcomeSubtitle = if (em.isNotEmpty()) "Signed in as $em" else welcomeSubtitle
+                    } else if (em.isNotEmpty()) {
                         welcomeTitle =
                             "WELCOME, ${em.substringBefore('@').uppercase(Locale.getDefault())}"
                         welcomeSubtitle = "Signed in as $em"

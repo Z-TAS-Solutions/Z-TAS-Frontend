@@ -24,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Locale
 
 class ProfileActivity : AppCompatActivity() {
 
@@ -103,6 +104,11 @@ class ProfileActivity : AppCompatActivity() {
 
         if (cachedEmail.isNotBlank()) {
             emailView.text = cachedEmail
+        }
+        val cachedName = AuthPreferences.cachedDisplayName(this).trim()
+        if (cachedName.isNotBlank()) {
+            nameView.text = cachedName
+        } else if (cachedEmail.isNotBlank()) {
             nameView.text = displayNameFromEmail(cachedEmail)
         }
     }
@@ -117,6 +123,33 @@ class ProfileActivity : AppCompatActivity() {
             .joinToString(" ") { part ->
                 part.replaceFirstChar { c -> if (c.isLowerCase()) c.titlecase() else c.toString() }
             }
+    }
+
+    /**
+     * Prefer the registration full name when the API still returns a single-token handle
+     * that matches the email local part (e.g. "alishamohamed7864@gmail.com" → "Alishamohamed7864").
+     */
+    private fun profileHeaderName(profileName: String, profileEmail: String): String {
+        val email = profileEmail.ifBlank { AuthPreferences.cachedEmail(this) }
+        val cached = AuthPreferences.cachedDisplayName(this).trim()
+        if (profileName.isNotBlank()) {
+            if (cached.isNotBlank() && isSingleTokenEmailHandle(profileName, email)) {
+                return cached
+            }
+            return profileName
+        }
+        return cached.ifBlank { displayNameFromEmail(email) }
+    }
+
+    private fun isSingleTokenEmailHandle(name: String, email: String): Boolean {
+        if (email.isBlank()) return false
+        if (name.any { it.isWhitespace() }) return false
+        val local = email.substringBefore('@', missingDelimiterValue = email)
+            .lowercase(Locale.getDefault())
+            .filter { it.isLetterOrDigit() }
+        if (local.isEmpty()) return false
+        val compact = name.lowercase(Locale.getDefault()).filter { it.isLetterOrDigit() }
+        return compact == local
     }
 
     private fun authHeaderOrNull(): String? = AuthPreferences.bearerOrNull(this)
@@ -153,9 +186,8 @@ class ProfileActivity : AppCompatActivity() {
                 val profile = raw?.let { UserProfileJson.parse(it) }
 
                 if (response.isSuccessful && profile != null) {
-                    if (profile.name.isNotBlank()) {
-                        findViewById<TextView>(R.id.username).text = profile.name
-                    }
+                    findViewById<TextView>(R.id.username).text =
+                        profileHeaderName(profile.name, profile.email)
                     if (profile.email.isNotBlank()) {
                         findViewById<TextView>(R.id.useremail).text = profile.email
                     }

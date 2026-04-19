@@ -32,6 +32,7 @@ class PasskeyActivity : AppCompatActivity() {
     private var userId: String = ""
     private var userEmail: String = ""
     private var userPhone: String = ""
+    private var userDisplayName: String = ""
     private var isPasskeyRegistrationInProgress = false
 
     companion object {
@@ -48,6 +49,10 @@ class PasskeyActivity : AppCompatActivity() {
         userId = intent.getStringExtra("USER_ID") ?: ""
         userEmail = intent.getStringExtra("USER_EMAIL") ?: ""
         userPhone = intent.getStringExtra("USER_PHONE") ?: ""
+        userDisplayName = intent.getStringExtra("USER_DISPLAY_NAME")?.trim().orEmpty()
+        if (userDisplayName.isNotBlank()) {
+            AuthPreferences.setCachedDisplayName(this, userDisplayName)
+        }
         if (userId.isEmpty()) {
             Log.w(TAG, "No USER_ID received — passkey registration will fail")
         }

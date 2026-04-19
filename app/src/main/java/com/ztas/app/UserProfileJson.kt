@@ -10,7 +10,7 @@ object UserProfileJson {
         return try {
             val root = JSONObject(json)
             val p = root.optJSONObject("data") ?: root
-            val name = p.optString("name").ifEmpty { return null }
+            val name = readDisplayName(p)
             val userId = readUserId(p)
             val email = p.optString("email")
             val phone = p.optString("phone").ifEmpty { p.optString("phone_no") }
@@ -18,6 +18,7 @@ object UserProfileJson {
             val active = p.optInt("active_devices", p.optInt("activeDevices", 0))
             val sec = p.optString("security_level").ifEmpty { p.optString("securityLevel", "Low") }
             val lastLogin = readLastLogin(p)
+            if (userId.isBlank() && email.isBlank()) return null
             UserProfileResponse(
                 userId = userId,
                 name = name,
@@ -31,6 +32,20 @@ object UserProfileJson {
         } catch (_: Exception) {
             null
         }
+    }
+
+    /** Prefer explicit full-name fields from the API over generic `name` (often mirrors email). */
+    private fun readDisplayName(p: JSONObject): String {
+        val keys = listOf(
+            "full_name", "fullName",
+            "display_name", "displayName",
+            "name", "username"
+        )
+        for (k in keys) {
+            val v = p.optString(k).trim()
+            if (v.isNotEmpty()) return v
+        }
+        return ""
     }
 
     private fun readUserId(p: JSONObject): String {
