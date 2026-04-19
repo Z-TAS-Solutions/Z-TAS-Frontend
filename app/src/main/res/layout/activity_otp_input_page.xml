@@ -23,7 +23,9 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:clipToPadding="false"
         android:fillViewport="true"
+        android:overScrollMode="never"
         app:layout_constraintTop_toBottomOf="@id/btnBackVerify"
         app:layout_constraintBottom_toBottomOf="parent">
 
@@ -33,7 +35,7 @@
             android:orientation="vertical"
             android:paddingHorizontal="30dp"
             android:paddingTop="8dp"
-            android:paddingBottom="24dp">
+            android:paddingBottom="80dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -70,11 +72,11 @@
                 android:background="@drawable/cyber_input_bg"
                 android:gravity="center_vertical"
                 android:hint="ENTER ONE-TIME PASSWORD"
-                android:digits="0123456789"
-                android:inputType="numberPassword"
+                android:inputType="text"
                 android:letterSpacing="0.1"
                 android:maxLength="6"
                 android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:textColor="@color/text_primary"
                 android:textColorHint="@color/text_secondary"
                 android:textSize="14sp" />
@@ -97,11 +99,11 @@
                 android:background="@drawable/cyber_input_bg"
                 android:gravity="center_vertical"
                 android:hint="RE-ENTER ONE-TIME PASSWORD"
-                android:digits="0123456789"
-                android:inputType="numberPassword"
+                android:inputType="text"
                 android:letterSpacing="0.1"
                 android:maxLength="6"
                 android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:textColor="@color/text_primary"
                 android:textColorHint="@color/text_secondary"
                 android:textSize="14sp" />
@@ -116,6 +118,20 @@
                 android:textColor="@color/text_primary"
                 android:textStyle="bold"
                 app:backgroundTint="@null" />
+
+            <TextView
+                android:id="@+id/tvResendOtp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="14dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:paddingVertical="8dp"
+                android:paddingHorizontal="12dp"
+                android:text="Resend code"
+                android:textColor="@color/ztas_cyan"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
         </LinearLayout>
     </ScrollView>

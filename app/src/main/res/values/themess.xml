@@ -5,6 +5,8 @@
         <item name="android:layout_height">55dp</item>
         <item name="android:layout_marginBottom">12dp</item>
         <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:gravity">center_vertical</item>
         <item name="android:textColorHint">#8B9CB7</item>
         <item name="android:textColor">#FFFFFF</item>
         <item name="android:textCursorDrawable">@drawable/cursor_cyan</item>
