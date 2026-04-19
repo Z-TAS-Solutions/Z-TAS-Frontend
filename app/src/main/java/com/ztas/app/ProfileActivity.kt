@@ -3,6 +3,7 @@ package com.ztas.app
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.Button
@@ -11,6 +12,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.isGone
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -180,10 +182,11 @@ class ProfileActivity : AppCompatActivity() {
 
     private fun getLastSyncText(timestampMs: Long): String {
         val now = System.currentTimeMillis()
-        val diffMs = now - timestampMs
+        val tsMs = normalizeEpochMillis(timestampMs)
+        val diffMs = now - tsMs
 
         // If the timestamp is 0 or negative (which means it wasn't returned or is invalid), say "Just now"
-        if (timestampMs <= 0L) return "Just now"
+        if (tsMs <= 0L) return "Just now"
 
         val diffMin = diffMs / 60_000
         val diffHr = diffMs / 3_600_000
@@ -195,6 +198,28 @@ class ProfileActivity : AppCompatActivity() {
             diffHr < 24 -> "${diffHr}h ago"
             else -> "${diffDay}d ago"
         }
+    }
+
+    private fun normalizeEpochMillis(value: Long): Long {
+        if (value <= 0L) return value
+        // Heuristic: seconds since epoch are ~1e9..1e10; millis are ~1e12..1e13
+        return if (value in 1..9_999_999_999L) value * 1000L else value
+    }
+
+    private fun looksGenericDeviceName(raw: String): Boolean {
+        val v = raw.trim().lowercase()
+        if (v.isBlank()) return true
+        return v.startsWith("okhttp/") ||
+            v == "android" ||
+            v == "unknown" ||
+            v == "mobile"
+    }
+
+    private fun localDeviceLabel(): String {
+        val brand = Build.BRAND.orEmpty().trim()
+        val model = Build.MODEL.orEmpty().trim()
+        return listOf(brand, model).filter { it.isNotBlank() }.joinToString(" ")
+            .ifBlank { "This device" }
     }
 
     private fun showActiveSessionsDialog() {
@@ -213,8 +238,35 @@ class ProfileActivity : AppCompatActivity() {
         val closeBtn = dialogView.findViewById<Button>(R.id.closesignout_id)
         val signOutOtherBtn = dialogView.findViewById<Button>(R.id.signout_otherid)
 
-        // Temporarily, we will set the static XML text fields to dynamic data by fetching from API
-        // Then we'll update the values. Our XML has two static devices. We will populate as many as we can fit.
+        val row1 = dialogView.findViewById<LinearLayout>(R.id.device_row_1)
+        val row2 = dialogView.findViewById<LinearLayout>(R.id.device_row_2)
+        val name1 = dialogView.findViewById<TextView>(R.id.device_name_1)
+        val status1 = dialogView.findViewById<TextView>(R.id.device_status_1)
+        val icon1 = dialogView.findViewById<ImageView>(R.id.device_icon_1)
+        val name2 = dialogView.findViewById<TextView>(R.id.device_name_2)
+        val status2 = dialogView.findViewById<TextView>(R.id.device_status_2)
+        val icon2 = dialogView.findViewById<ImageView>(R.id.device_icon_2)
+
+        fun bindRow(
+            deviceNameView: TextView,
+            statusView: TextView,
+            iconView: ImageView,
+            deviceName: String,
+            isCurrent: Boolean,
+            lastActive: Long
+        ) {
+            deviceNameView.text = deviceName.ifBlank { "Unknown device" }
+            if (isCurrent) {
+                statusView.text = "Current Device"
+                statusView.setTextColor(android.graphics.Color.parseColor("#00ccff"))
+                iconView.setColorFilter(android.graphics.Color.parseColor("#00ccff"))
+            } else {
+                statusView.text = "Last active: ${getLastSyncText(lastActive)}"
+                statusView.setTextColor(android.graphics.Color.parseColor("#888888"))
+                iconView.setColorFilter(android.graphics.Color.parseColor("#888888"))
+            }
+        }
+
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val token = authHeaderOrNull() ?: return@launch
@@ -224,10 +276,49 @@ class ProfileActivity : AppCompatActivity() {
 
                 if (response.isSuccessful) {
                     val sessions = response.body()?.data?.sessions.orEmpty()
-                    // In a real scenario, this dialog should use a RecyclerView or Compose for dynamic counts.
-                    // For now, let's keep it simple: we know our XML has two hardcoded blocks. 
-                    // This serves as an immediate visual update without massive UI changes to the static XML.
-                    Log.d(TAG, "Loaded ${sessions.size} sessions")
+                    val first = sessions.getOrNull(0)
+                    val second = sessions.getOrNull(1)
+
+                    if (first != null) {
+                        row1.isGone = false
+                        val firstName = if (first.current && looksGenericDeviceName(first.deviceName)) {
+                            localDeviceLabel()
+                        } else {
+                            first.deviceName
+                        }
+                        bindRow(
+                            deviceNameView = name1,
+                            statusView = status1,
+                            iconView = icon1,
+                            deviceName = firstName,
+                            isCurrent = first.current,
+                            lastActive = first.lastActive
+                        )
+                    } else {
+                        row1.isGone = true
+                    }
+
+                    if (second != null) {
+                        row2.isGone = false
+                        val secondName = if (second.current && looksGenericDeviceName(second.deviceName)) {
+                            localDeviceLabel()
+                        } else {
+                            second.deviceName
+                        }
+                        bindRow(
+                            deviceNameView = name2,
+                            statusView = status2,
+                            iconView = icon2,
+                            deviceName = secondName,
+                            isCurrent = second.current,
+                            lastActive = second.lastActive
+                        )
+                    } else {
+                        row2.isGone = true
+                    }
+
+                    // Disable "Sign Out Other" when there's no other device.
+                    signOutOtherBtn.isEnabled = sessions.any { !it.current }
                 } else {
                     Log.e(TAG, "Failed to load sessions: ${response.code()}")
                 }
