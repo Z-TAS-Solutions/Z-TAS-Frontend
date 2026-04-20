@@ -28,6 +28,7 @@ import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.lifecycleScope
 import com.ztas.app.network.AssertionResponseBody
+import com.ztas.app.network.BeginRegisterRequest
 import com.ztas.app.network.FinishLoginRequest
 import com.ztas.app.network.FinishRegisterRequest
 import com.ztas.app.network.AttestationResponseBody
@@ -128,8 +129,11 @@ class ProfileActivity : AppCompatActivity() {
             emailView.text = cachedEmail
         }
         val cachedName = AuthPreferences.cachedDisplayName(this).trim()
+        val registeredName = AuthPreferences.cachedName(this).trim()
         if (cachedName.isNotBlank()) {
             nameView.text = cachedName
+        } else if (registeredName.isNotBlank()) {
+            nameView.text = registeredName
         } else if (cachedEmail.isNotBlank()) {
             nameView.text = ProfileDisplayName.displayNameFromEmail(cachedEmail)
         }
@@ -336,7 +340,8 @@ class ProfileActivity : AppCompatActivity() {
 
     private data class ParsedEnrollBegin(
         val sessionToken: String,
-        val createRequestJson: String
+        val createRequestJson: String,
+        val useEnrollFinish: Boolean
     )
 
     private fun parseEnrollBeginPayload(raw: String): ParsedEnrollBegin? {
@@ -370,12 +375,77 @@ class ProfileActivity : AppCompatActivity() {
 
             ParsedEnrollBegin(
                 sessionToken = sessionToken,
-                createRequestJson = publicKey.toString()
+                createRequestJson = publicKey.toString(),
+                useEnrollFinish = true
             )
         } catch (e: Exception) {
             Log.e(TAG, "parseEnrollBeginPayload failed", e)
             null
         }
+    }
+
+    private suspend fun resolveEnrollBegin(bearer: String): ParsedEnrollBegin? {
+        val beginResponse = withContext(Dispatchers.IO) {
+            webAuthnApi.beginEnrollPasskey(token = bearer)
+        }
+        if (beginResponse.isSuccessful && beginResponse.body() != null) {
+            val raw = beginResponse.body()!!.string()
+            val parsed = parseEnrollBeginPayload(raw)
+            if (parsed != null) return parsed
+            Toast.makeText(
+                this@ProfileActivity,
+                "Passkey enroll failed: invalid challenge payload.",
+                Toast.LENGTH_LONG
+            ).show()
+            return null
+        }
+
+        val beginError = runCatching { beginResponse.errorBody()?.string().orEmpty() }.getOrDefault("")
+        Log.w(
+            TAG,
+            "Enroll begin failed (${beginResponse.code()}); trying legacy register flow. body=$beginError"
+        )
+
+        val cachedEmail = AuthPreferences.cachedEmail(this@ProfileActivity).trim()
+        val cachedUserId = AuthPreferences.cachedUserId(this@ProfileActivity).trim()
+        if (cachedEmail.isBlank() || cachedUserId.isBlank()) {
+            val msg = if (beginError.isNotBlank()) "Passkey enroll begin failed: $beginError"
+            else "Passkey enroll begin failed (${beginResponse.code()})"
+            Toast.makeText(this@ProfileActivity, msg, Toast.LENGTH_LONG).show()
+            return null
+        }
+
+        val fallbackResponse = withContext(Dispatchers.IO) {
+            webAuthnApi.beginRegisterRaw(
+                BeginRegisterRequest(
+                    customId = cachedUserId,
+                    userId = cachedUserId,
+                    email = cachedEmail
+                )
+            )
+        }
+        if (!fallbackResponse.isSuccessful || fallbackResponse.body() == null) {
+            val fallbackError =
+                runCatching { fallbackResponse.errorBody()?.string().orEmpty() }.getOrDefault("")
+            val msg = if (fallbackError.isNotBlank()) {
+                "Passkey enroll begin failed: $fallbackError"
+            } else {
+                "Passkey enroll begin failed (${fallbackResponse.code()})"
+            }
+            Toast.makeText(this@ProfileActivity, msg, Toast.LENGTH_LONG).show()
+            return null
+        }
+
+        val fallbackParsed = parseEnrollBeginPayload(fallbackResponse.body()!!.string())
+        if (fallbackParsed == null) {
+            Toast.makeText(
+                this@ProfileActivity,
+                "Passkey enroll failed: invalid challenge payload.",
+                Toast.LENGTH_LONG
+            ).show()
+            return null
+        }
+        return fallbackParsed.copy(useEnrollFinish = false)
     }
 
     private fun enrollAdditionalPasskey() {
@@ -393,26 +463,7 @@ class ProfileActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                val beginResponse = withContext(Dispatchers.IO) {
-                    webAuthnApi.beginEnrollPasskey(token = bearer)
-                }
-                if (!beginResponse.isSuccessful || beginResponse.body() == null) {
-                    val err = runCatching { beginResponse.errorBody()?.string().orEmpty() }.getOrDefault("")
-                    val msg = if (err.isNotBlank()) "Passkey enroll begin failed: $err"
-                    else "Passkey enroll begin failed (${beginResponse.code()})"
-                    Toast.makeText(this@ProfileActivity, msg, Toast.LENGTH_LONG).show()
-                    return@launch
-                }
-
-                val parsed = parseEnrollBeginPayload(beginResponse.body()!!.string())
-                if (parsed == null) {
-                    Toast.makeText(
-                        this@ProfileActivity,
-                        "Passkey enroll failed: invalid challenge payload.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    return@launch
-                }
+                val parsed = resolveEnrollBegin(bearer) ?: return@launch
 
                 val createRequest = CreatePublicKeyCredentialRequest(parsed.createRequestJson)
                 val createResult = passkeyCredentialManager.createCredential(this@ProfileActivity, createRequest)
@@ -433,26 +484,44 @@ class ProfileActivity : AppCompatActivity() {
                     type = registrationJson.optString("type", "public-key")
                 )
 
-                val finishResponse = withContext(Dispatchers.IO) {
-                    webAuthnApi.finishEnrollPasskey(
-                        token = bearer,
-                        sessionToken = parsed.sessionToken,
-                        authenticatorName = localDeviceLabel(),
-                        request = finishReq
-                    )
-                }
-
-                if (finishResponse.isSuccessful) {
-                    Toast.makeText(this@ProfileActivity, "New passkey added successfully", Toast.LENGTH_LONG).show()
-                    findViewById<TextView>(R.id.addPasskeySubtitle)?.apply {
-                        text = "Passkey added just now"
-                        setTextColor(android.graphics.Color.parseColor("#00cc66"))
+                if (parsed.useEnrollFinish) {
+                    val finishResponse = withContext(Dispatchers.IO) {
+                        webAuthnApi.finishEnrollPasskey(
+                            token = bearer,
+                            sessionToken = parsed.sessionToken,
+                            authenticatorName = localDeviceLabel(),
+                            request = finishReq
+                        )
+                    }
+                    if (finishResponse.isSuccessful) {
+                        Toast.makeText(this@ProfileActivity, "New passkey added successfully", Toast.LENGTH_LONG).show()
+                        findViewById<TextView>(R.id.addPasskeySubtitle)?.apply {
+                            text = "Passkey added just now"
+                            setTextColor(android.graphics.Color.parseColor("#00cc66"))
+                        }
+                    } else {
+                        val err = runCatching { finishResponse.errorBody()?.string().orEmpty() }.getOrDefault("")
+                        val msg = if (err.isNotBlank()) "Passkey enroll failed: $err"
+                        else "Passkey enroll failed (${finishResponse.code()})"
+                        Toast.makeText(this@ProfileActivity, msg, Toast.LENGTH_LONG).show()
                     }
                 } else {
-                    val err = runCatching { finishResponse.errorBody()?.string().orEmpty() }.getOrDefault("")
-                    val msg = if (err.isNotBlank()) "Passkey enroll failed: $err"
-                    else "Passkey enroll failed (${finishResponse.code()})"
-                    Toast.makeText(this@ProfileActivity, msg, Toast.LENGTH_LONG).show()
+                    val finishResponse = withContext(Dispatchers.IO) {
+                        webAuthnApi.finishRegister(
+                            sessionToken = parsed.sessionToken,
+                            request = finishReq
+                        )
+                    }
+                    if (finishResponse.isSuccessful) {
+                        Toast.makeText(this@ProfileActivity, "New passkey added successfully", Toast.LENGTH_LONG).show()
+                        findViewById<TextView>(R.id.addPasskeySubtitle)?.apply {
+                            text = "Passkey added just now"
+                            setTextColor(android.graphics.Color.parseColor("#00cc66"))
+                        }
+                    } else {
+                        val msg = "Passkey enroll failed (${finishResponse.code()})"
+                        Toast.makeText(this@ProfileActivity, msg, Toast.LENGTH_LONG).show()
+                    }
                 }
             } catch (e: CreateCredentialException) {
                 Log.e(TAG, "Passkey create credential failed", e)

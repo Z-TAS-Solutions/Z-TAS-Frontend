@@ -31,6 +31,7 @@ object AuthPreferences {
         // Avoid showing one user's saved full name after a different account signs in.
         if (prevUserId.isNotEmpty() && nextUserId.isNotEmpty() && prevUserId != nextUserId) {
             e.remove(KEY_DISPLAY_NAME)
+            e.remove(KEY_NAME)
         }
         e.apply()
     }

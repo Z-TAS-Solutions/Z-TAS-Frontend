@@ -53,6 +53,7 @@ class PasskeyActivity : AppCompatActivity() {
         userDisplayName = intent.getStringExtra("USER_DISPLAY_NAME")?.trim().orEmpty()
         if (userDisplayName.isNotBlank()) {
             AuthPreferences.setCachedDisplayName(this, userDisplayName, emailForCheck = userEmail)
+            AuthPreferences.setCachedName(this, userDisplayName)
         }
         if (userId.isEmpty()) {
             Log.w(TAG, "No USER_ID received — passkey registration will fail")

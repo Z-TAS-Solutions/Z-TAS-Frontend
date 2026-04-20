@@ -32,12 +32,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ztas.app.network.NotificationData
+import com.ztas.app.network.ActivityLogData
 import com.ztas.app.network.RetrofitClient
 import com.ztas.app.network.SessionData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.format.DateTimeParseException
 import java.util.Locale
 
 
@@ -54,16 +56,21 @@ val BorderCyanSubtle = Color(0xFF00D1FF).copy(alpha = 0.3f)
 @Composable
 fun HomeScreen() {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var showSessionsDialog by remember { mutableStateOf(false) }
     var sessions by remember { mutableStateOf<List<SessionData>>(emptyList()) }
     var sessionsLoading by remember { mutableStateOf(true) }
     var sessionsError by remember { mutableStateOf<String?>(null) }
     var activities by remember { mutableStateOf<List<ActivityItem>>(emptyList()) }
     var activitiesLoading by remember { mutableStateOf(true) }
+    var activitiesLoadingMore by remember { mutableStateOf(false) }
+    var activitiesError by remember { mutableStateOf<String?>(null) }
+    var activitiesOffset by remember { mutableIntStateOf(0) }
+    var activitiesTotal by remember { mutableIntStateOf(0) }
     var welcomeTitle by remember { mutableStateOf("WELCOME") }
     var welcomeSubtitle by remember { mutableStateOf("SYSTEM STATUS: OPTIMAL") }
 
-    // Fetch profile, sessions + notifications on screen load
+    // Fetch profile, sessions + notifications on screen load - API calls
     LaunchedEffect(Unit) {
         val bearer = AuthPreferences.bearerOrNull(context)
         if (bearer != null) {
@@ -118,24 +125,35 @@ fun HomeScreen() {
             sessionsLoading = false
         }
 
-        // Notifications (preview — limit 5)
+        // Activity logs
         try {
             if (bearer != null) {
-                val notifResponse = withContext(Dispatchers.IO) {
-                    RetrofitClient.notificationApi.getNotifications(
+                val logsResponse = withContext(Dispatchers.IO) {
+                    RetrofitClient.activityLogApi.getUserActivityLogs(
                         token = bearer,
-                        limit = 5
+                        limit = 10,
+                        offset = 0
                     )
                 }
-                if (notifResponse.isSuccessful) {
-                    activities =
-                        notifResponse.body()?.data?.notifications.orEmpty().map { it.toActivityItem() }
+                if (logsResponse.isSuccessful) {
+                    val payload = logsResponse.body()?.data
+                    val logs = payload?.logs.orEmpty()
+                    activities = logs.map { it.toActivityItem() }
+                    activitiesOffset = logs.size
+                    activitiesTotal = payload?.total ?: logs.size
                 } else {
-                    Log.e("HomeScreen", "Notifications error: ${notifResponse.code()}")
+                    activitiesError = when (logsResponse.code()) {
+                        401 -> "Session expired. Please sign in again."
+                        403 -> "You are not allowed to view activity logs."
+                        400 -> "Invalid activity log query."
+                        else -> "Failed to load activity logs."
+                    }
+                    Log.e("HomeScreen", "Activity logs error: ${logsResponse.code()}")
                 }
             }
         } catch (e: Exception) {
-            Log.e("HomeScreen", "Notifications fetch failed", e)
+            activitiesError = "Failed to load activity logs."
+            Log.e("HomeScreen", "Activity logs fetch failed", e)
         } finally {
             activitiesLoading = false
         }
@@ -292,8 +310,95 @@ fun HomeScreen() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(activities) { item ->
-                        ProfessionalActivityCard(item)
+                    when {
+                        activitiesLoading -> {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 20.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(color = ZTasCyan)
+                                }
+                            }
+                        }
+                        activitiesError != null -> {
+                            item {
+                                Text(
+                                    text = activitiesError ?: "Failed to load activity logs.",
+                                    color = CriticalRed,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                        activities.isEmpty() -> {
+                            item {
+                                Text(
+                                    text = "No recent activity logs yet.",
+                                    color = TextSecondary,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                        else -> {
+                            items(activities) { item ->
+                                ProfessionalActivityCard(item)
+                            }
+                            if (activitiesOffset < activitiesTotal) {
+                                item {
+                                    OutlinedButton(
+                                        onClick = {
+                                            if (activitiesLoadingMore) return@OutlinedButton
+                                            val bearer = AuthPreferences.bearerOrNull(context)
+                                                ?: return@OutlinedButton
+                                            activitiesLoadingMore = true
+                                            scope.launch {
+                                                try {
+                                                    val response = withContext(Dispatchers.IO) {
+                                                        RetrofitClient.activityLogApi.getUserActivityLogs(
+                                                            token = bearer,
+                                                            limit = 10,
+                                                            offset = activitiesOffset
+                                                        )
+                                                    }
+                                                    if (response.isSuccessful) {
+                                                        val payload = response.body()?.data
+                                                        val logs = payload?.logs.orEmpty()
+                                                        activities =
+                                                            activities + logs.map { it.toActivityItem() }
+                                                        activitiesOffset += logs.size
+                                                        activitiesTotal = payload?.total ?: activitiesTotal
+                                                    } else {
+                                                        activitiesError = "Failed to load more logs."
+                                                    }
+                                                } catch (e: Exception) {
+                                                    activitiesError = "Failed to load more logs."
+                                                } finally {
+                                                    activitiesLoadingMore = false
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        border = BorderStroke(1.dp, ZTasCyan)
+                                    ) {
+                                        if (activitiesLoadingMore) {
+                                            CircularProgressIndicator(
+                                                color = ZTasCyan,
+                                                modifier = Modifier.size(14.dp),
+                                                strokeWidth = 2.dp
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "LOAD MORE",
+                                                color = ZTasCyan,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -448,28 +553,45 @@ data class ActivityItem(
 )
 
 /**
- * Maps an API [NotificationData] to the UI's [ActivityItem].
+ * Maps an API [ActivityLogData] to the UI's [ActivityItem].
  */
-private fun NotificationData.toActivityItem(): ActivityItem {
-    val titleUpper = title.uppercase()
+private fun ActivityLogData.toActivityItem(): ActivityItem {
+    val titleValue = title.orEmpty().ifBlank { type.orEmpty().replace('_', ' ') }
+    val typeUpper = type.orEmpty().uppercase()
+    val titleUpper = titleValue.uppercase()
+    val logUpper = log.orEmpty().uppercase()
     val icon = when {
-        "FAIL" in titleUpper || "DENIED" in titleUpper -> Icons.Default.Close
-        "BLOCK" in titleUpper || "WARNING" in titleUpper -> Icons.Default.Warning
-        "SUCCESS" in titleUpper || "LOGIN" in titleUpper -> Icons.Default.CheckCircle
-        "MFA" in titleUpper || "VERIFIED" in titleUpper -> Icons.Default.Lock
-        "SESSION" in titleUpper -> Icons.Default.Refresh
+        "DELETE" in typeUpper || "DELETE" in titleUpper || "DELETE" in logUpper -> Icons.Default.Delete
+        "FAIL" in typeUpper || "FAIL" in titleUpper || "DENIED" in logUpper -> Icons.Default.Close
+        "BLOCK" in typeUpper || "WARNING" in titleUpper || "SUSPICIOUS" in logUpper -> Icons.Default.Warning
+        "MFA" in typeUpper || "PASSKEY" in typeUpper || "VERIFIED" in titleUpper -> Icons.Default.Lock
+        "LOGIN" in typeUpper || "SUCCESS" in titleUpper -> Icons.Default.CheckCircle
+        "SESSION" in typeUpper -> Icons.Default.Refresh
         else -> Icons.Default.Notifications
     }
-    val isCritical = status == "unread"
-    val timeAgo = formatLastActive(timestamp)
+    val timeAgo = formatIsoTimeAgo(timeLabel)
+    val deviceAndTime = listOfNotNull(
+        device?.takeIf { it.isNotBlank() },
+        timeAgo.takeIf { it.isNotBlank() }
+    ).joinToString(" • ").ifBlank { "Unknown device" }
 
     return ActivityItem(
-        title = title,
-        device = "$details • $timeAgo",
-        isCritical = isCritical,
+        title = titleValue.ifBlank { "Activity" },
+        device = deviceAndTime,
+        isCritical = isCritical == true,
         icon = icon,
-        subtitle = details
+        subtitle = log.orEmpty()
     )
+}
+
+private fun formatIsoTimeAgo(isoTime: String?): String {
+    if (isoTime.isNullOrBlank()) return ""
+    return try {
+        val timestampMs = Instant.parse(isoTime).toEpochMilli()
+        formatLastActive(timestampMs)
+    } catch (_: DateTimeParseException) {
+        isoTime
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

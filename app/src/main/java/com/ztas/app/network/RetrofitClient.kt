@@ -38,4 +38,5 @@ object RetrofitClient {
     val webAuthnApi: WebAuthnApi = retrofit.create(WebAuthnApi::class.java)
     val sessionApi: SessionApi = retrofit.create(SessionApi::class.java)
     val notificationApi: NotificationApi = retrofit.create(NotificationApi::class.java)
+    val activityLogApi: ActivityLogApi = retrofit.create(ActivityLogApi::class.java)
 }

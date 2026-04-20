@@ -22,6 +22,9 @@ interface WebAuthnApi {
     @POST("webauthn/register/begin")
     suspend fun beginRegister(@Body request: BeginRegisterRequest): Response<BeginRegisterResponse>
 
+    @POST("webauthn/register/begin")
+    suspend fun beginRegisterRaw(@Body request: BeginRegisterRequest): Response<ResponseBody>
+
     @POST("webauthn/register/finish")
     suspend fun finishRegister(
         @Header("X-Session-Token") sessionToken: String,

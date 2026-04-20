@@ -1,6 +1,7 @@
 package com.ztas.app.network
 
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Path
@@ -20,6 +21,12 @@ interface SessionApi {
     suspend fun logoutOtherDevices(
         @Header("Authorization") token: String
     ): Response<LogoutOthersResponse>
+
+    @POST("user/sessions/fcm-token")
+    suspend fun updateFcmToken(
+        @Header("Authorization") token: String,
+        @Body request: FcmTokenRequest
+    ): Response<BasicStatusResponse>
 
     @POST("user/force-logout-devices")
     suspend fun forceLogoutAllDevices(

@@ -266,6 +266,43 @@ data class MarkAllReadData(
     @SerializedName("updated_count") val updatedCount: Int
 )
 
+data class FcmTokenRequest(
+    val fcmToken: String
+)
+
+data class BasicStatusResponse(
+    val status: String? = null,
+    val message: String? = null
+)
+
+// ═══════════════════════════════════════════════════════════════
+// Activity Logs
+// ═══════════════════════════════════════════════════════════════
+
+data class ActivityLogsApiEnvelope(
+    val status: String? = null,
+    val message: String? = null,
+    val data: ActivityLogsResponse? = null
+)
+
+data class ActivityLogsResponse(
+    val limit: Int = 20,
+    val offset: Int = 0,
+    val total: Int = 0,
+    @SerializedName("data") val logs: List<ActivityLogData>? = null
+)
+
+data class ActivityLogData(
+    @SerializedName("activityId") val activityId: String? = null,
+    val type: String? = null,
+    val title: String? = null,
+    val log: String? = null,
+    val device: String? = null,
+    val isCritical: Boolean? = null,
+    val timeLabel: String? = null,
+    @SerializedName("userId") val userId: String? = null
+)
+
 // ═══════════════════════════════════════════════════════════════
 // User Profile
 // ═══════════════════════════════════════════════════════════════

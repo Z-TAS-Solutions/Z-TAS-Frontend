@@ -27,9 +27,16 @@ object ProfileDisplayName {
     fun headerName(context: Context, profileName: String, profileEmail: String): String {
         val email = profileEmail.ifBlank { AuthPreferences.cachedEmail(context) }
         val cached = AuthPreferences.cachedDisplayName(context).trim()
+        val registeredName = AuthPreferences.cachedName(context).trim()
         if (cached.isNotBlank()) {
             if (profileName.isBlank() || DisplayNameHints.isEmailLocalHandle(profileName, email)) {
                 return cached
+            }
+            return profileName
+        }
+        if (registeredName.isNotBlank()) {
+            if (profileName.isBlank() || DisplayNameHints.isEmailLocalHandle(profileName, email)) {
+                return registeredName
             }
             return profileName
         }

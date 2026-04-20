@@ -10,12 +10,18 @@ import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.ztas.app.network.FcmTokenRequest
+import com.ztas.app.network.RetrofitClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MfaMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d("FCM", "FCM Token: $token")
+        syncFcmToken(token)
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
@@ -90,5 +96,24 @@ class MfaMessagingService : FirebaseMessagingService() {
             .build()
 
         notificationManager.notify(1001, notification)
+    }
+
+    private fun syncFcmToken(fcmToken: String) {
+        if (fcmToken.isBlank()) return
+        val bearer = AuthPreferences.bearerOrNull(this) ?: return
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.sessionApi.updateFcmToken(
+                    token = bearer,
+                    request = FcmTokenRequest(fcmToken = fcmToken)
+                )
+                if (!response.isSuccessful) {
+                    Log.e("FCM", "FCM token refresh update failed: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("FCM", "FCM token refresh update exception", e)
+            }
+        }
     }
 }

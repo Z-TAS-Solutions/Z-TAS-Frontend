@@ -202,6 +202,7 @@ class RegistrationPage : AppCompatActivity() {
                         name,
                         emailForCheck = email
                     )
+                    AuthPreferences.setCachedName(this@RegistrationPage, name)
 
                     Toast.makeText(
                         this@RegistrationPage,
