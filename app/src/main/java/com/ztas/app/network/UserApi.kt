@@ -24,17 +24,15 @@ interface UserApi {
         @Header("Authorization") token: String
     ): Response<ResponseBody>
 
-    // Some backends implement account deletion as DELETE-with-body, others as POST.
-    // Keep both and let the caller fallback based on HTTP status.
-    @HTTP(method = "DELETE", path = "user/account/delete", hasBody = true)
-    suspend fun deleteAccountDelete(
-        @Header("Authorization") token: String,
-        @Body request: DeleteAccountRequest
-    ): Response<DeleteAccountResponse>
+    @POST("user/account/delete/begin")
+    suspend fun beginDeleteAccount(
+        @Header("Authorization") token: String
+    ): Response<ResponseBody>
 
-    @POST("user/account/delete")
-    suspend fun deleteAccountPost(
+    @HTTP(method = "DELETE", path = "user/account", hasBody = true)
+    suspend fun confirmDeleteAccount(
         @Header("Authorization") token: String,
-        @Body request: DeleteAccountRequest
+        @Header("X-Session-Token") sessionToken: String,
+        @Body request: FinishLoginRequest
     ): Response<DeleteAccountResponse>
 }
