@@ -111,6 +111,9 @@ class LoginActivity : AppCompatActivity() {
                                 finishData.displayName,
                                 emailForCheck = finishData.email
                             )
+                            if (!DisplayNameHints.isEmailLocalHandle(finishData.displayName, finishData.email)) {
+                                AuthPreferences.setCachedName(this@LoginActivity, finishData.displayName)
+                            }
                         }
 
                         runCatching {
@@ -128,6 +131,7 @@ class LoginActivity : AppCompatActivity() {
                                         nm,
                                         emailForCheck = profileEmail
                                     )
+                                    AuthPreferences.setCachedName(this@LoginActivity, nm)
                                 }
                             }
                         }.onFailure { Log.w(TAG, "Profile fetch after login (display name cache)", it) }

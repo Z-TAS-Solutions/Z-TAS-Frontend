@@ -128,12 +128,12 @@ class ProfileActivity : AppCompatActivity() {
         if (cachedEmail.isNotBlank()) {
             emailView.text = cachedEmail
         }
-        val cachedName = AuthPreferences.cachedDisplayName(this).trim()
         val registeredName = AuthPreferences.cachedName(this).trim()
-        if (cachedName.isNotBlank()) {
-            nameView.text = cachedName
-        } else if (registeredName.isNotBlank()) {
+        val cachedDisplayName = AuthPreferences.cachedDisplayName(this).trim()
+        if (registeredName.isNotBlank()) {
             nameView.text = registeredName
+        } else if (cachedDisplayName.isNotBlank()) {
+            nameView.text = cachedDisplayName
         } else if (cachedEmail.isNotBlank()) {
             nameView.text = ProfileDisplayName.displayNameFromEmail(cachedEmail)
         }
