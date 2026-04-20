@@ -51,7 +51,7 @@ class NotificationPage : AppCompatActivity() {
         tabUnread = findViewById(R.id.tabUnread)
         val btnMarkAllRead = findViewById<TextView>(R.id.btnMarkAllRead)
         val backArrow = findViewById<ImageView>(android.widget.ImageView::class.java.cast(findViewById(R.id.backArrow))?.id ?: R.id.backArrow)
-        // Wait, I can just do:
+
         findViewById<android.widget.ImageView>(R.id.backArrow)?.setOnClickListener {
             finish()
         }
