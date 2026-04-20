@@ -73,11 +73,19 @@ fun HomeScreen() {
                 }
                 val profile = profileRaw?.let { UserProfileJson.parse(it) }
                 if (profile != null) {
-                    welcomeTitle = "WELCOME, ${profile.name.uppercase(Locale.getDefault())}"
-                    welcomeSubtitle = "Signed in as ${profile.email}"
+                    val emailCheck = profile.email.ifBlank { AuthPreferences.cachedEmail(context) }
+                    val resolved =
+                        ProfileDisplayName.headerName(context, profile.name, profile.email)
+                    welcomeTitle = "WELCOME, ${resolved.uppercase(Locale.getDefault())}"
+                    welcomeSubtitle = "Signed in as $emailCheck"
+                    ProfileDisplayName.persistIfRichLabel(context, resolved, emailCheck)
                 } else {
                     val em = AuthPreferences.cachedEmail(context)
-                    if (em.isNotEmpty()) {
+                    val cachedName = AuthPreferences.cachedDisplayName(context).trim()
+                    if (cachedName.isNotEmpty()) {
+                        welcomeTitle = "WELCOME, ${cachedName.uppercase(Locale.getDefault())}"
+                        welcomeSubtitle = if (em.isNotEmpty()) "Signed in as $em" else welcomeSubtitle
+                    } else if (em.isNotEmpty()) {
                         welcomeTitle =
                             "WELCOME, ${em.substringBefore('@').uppercase(Locale.getDefault())}"
                         welcomeSubtitle = "Signed in as $em"

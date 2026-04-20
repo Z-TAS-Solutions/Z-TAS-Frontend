@@ -3,9 +3,9 @@ package com.ztas.app.network
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
-import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.HTTP
 import retrofit2.http.POST
 
 interface UserApi {
@@ -24,9 +24,15 @@ interface UserApi {
         @Header("Authorization") token: String
     ): Response<ResponseBody>
 
-    @DELETE("user/account/delete")
-    suspend fun deleteAccount(
+    @POST("user/account/delete/begin")
+    suspend fun beginDeleteAccount(
+        @Header("Authorization") token: String
+    ): Response<ResponseBody>
+
+    @HTTP(method = "DELETE", path = "user/account", hasBody = true)
+    suspend fun confirmDeleteAccount(
         @Header("Authorization") token: String,
-        @Body request: DeleteAccountRequest
+        @Header("X-Session-Token") sessionToken: String,
+        @Body request: FinishLoginRequest
     ): Response<DeleteAccountResponse>
 }

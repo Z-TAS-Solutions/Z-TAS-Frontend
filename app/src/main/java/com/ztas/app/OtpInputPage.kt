@@ -28,6 +28,7 @@ class OtpInputPage : AppCompatActivity() {
     private var userId: String = ""
     private var userEmail: String = ""
     private var userPhone: String = ""
+    private var userDisplayName: String = ""
     private var isVerifying = false
     private var isResending = false
     private var resendCooldownTimer: CountDownTimer? = null
@@ -44,6 +45,7 @@ class OtpInputPage : AppCompatActivity() {
         userId = intent.getStringExtra("USER_ID") ?: ""
         userEmail = intent.getStringExtra("USER_EMAIL") ?: ""
         userPhone = intent.getStringExtra("USER_PHONE") ?: ""
+        userDisplayName = intent.getStringExtra("USER_DISPLAY_NAME")?.trim().orEmpty()
         if (userId.isEmpty()) {
             Log.w(TAG, "No USER_ID received — OTP verification will fail")
         }
@@ -274,6 +276,7 @@ class OtpInputPage : AppCompatActivity() {
                             putExtra("USER_ID", userId)
                             putExtra("USER_EMAIL", userEmail)
                             putExtra("USER_PHONE", userPhone)
+                            putExtra("USER_DISPLAY_NAME", userDisplayName)
                         }
                         startActivity(intent)
                         // Do not finish(): keep OTP in the back stack so Back from Passkey returns here.
